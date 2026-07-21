@@ -13,6 +13,7 @@ def test_settings_use_safe_defaults() -> None:
 
     assert settings.app_name == "AgriGuard AI API"
     assert settings.environment == "development"
+    assert settings.log_level == "INFO"
 
 
 def test_environment_variable_overrides_default(monkeypatch) -> None:

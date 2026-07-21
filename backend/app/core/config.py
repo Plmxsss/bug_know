@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     app_summary: str = "Agricultural pest detection and knowledge API"
     app_version: str = __version__
     environment: Literal["development", "test", "production"] = "development"
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
 
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",
