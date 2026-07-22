@@ -7,6 +7,21 @@ from fastapi.testclient import TestClient
 from app.main import create_app
 
 
+class FakeDatabase:
+    """Controllable database replacement used without a real MySQL server."""
+
+    def __init__(self, *, available: bool = True) -> None:
+        self.available = available
+        self.closed = False
+
+    async def ping(self) -> None:
+        if not self.available:
+            raise ConnectionError("MySQL is unavailable")
+
+    async def close(self) -> None:
+        self.closed = True
+
+
 def test_health_check_returns_service_metadata() -> None:
     """The health endpoint should expose stable, typed service metadata."""
 
@@ -40,3 +55,28 @@ def test_openapi_contains_health_endpoint() -> None:
 
     assert response.status_code == 200
     assert "/api/v1/health" in response.json()["paths"]
+    assert "/api/v1/health/ready" in response.json()["paths"]
+
+
+def test_readiness_check_succeeds_when_database_answers() -> None:
+    """Readiness should succeed after the database answers a minimal query."""
+
+    database = FakeDatabase()
+    with TestClient(create_app(database=database)) as client:
+        response = client.get("/api/v1/health/ready")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ready", "database": "ok"}
+    assert database.closed is True
+
+
+def test_readiness_check_fails_safely_when_database_is_down() -> None:
+    """Readiness should return 503 without exposing connection details."""
+
+    database = FakeDatabase(available=False)
+    with TestClient(create_app(database=database)) as client:
+        response = client.get("/api/v1/health/ready")
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "DATABASE_UNAVAILABLE"
+    assert "MySQL is unavailable" not in response.text

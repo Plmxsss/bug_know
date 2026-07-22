@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Literal
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app import __version__
@@ -18,6 +19,11 @@ class Settings(BaseSettings):
     app_version: str = __version__
     environment: Literal["development", "test", "production"] = "development"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+    mysql_host: str = "127.0.0.1"
+    mysql_port: int = 3306
+    mysql_database: str = "agriguard"
+    mysql_user: str = "agriguard"
+    mysql_password: SecretStr = SecretStr("")
 
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",

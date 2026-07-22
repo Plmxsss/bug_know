@@ -6,8 +6,9 @@ YOLO model, FastAPI, MySQL, Qdrant RAG, local or API-hosted language models,
 and a Vue 3 frontend.
 
 The repository is built in small, verifiable stages. The current stage contains
-only the backend foundation and a health-check endpoint. Database access, YOLO
-inference, RAG, LLM integration, and the frontend are intentionally deferred.
+the backend foundation, health checks, and an asynchronous MySQL connection.
+Database tables, YOLO inference, RAG, LLM integration, and the frontend are
+intentionally deferred.
 
 ## Requirements
 
@@ -39,6 +40,7 @@ uvicorn app.main:app --reload
 Open:
 
 - API health check: <http://127.0.0.1:8000/api/v1/health>
+- API and MySQL readiness check: <http://127.0.0.1:8000/api/v1/health/ready>
 - Swagger UI: <http://127.0.0.1:8000/docs>
 - OpenAPI schema: <http://127.0.0.1:8000/openapi.json>
 
@@ -76,6 +78,27 @@ Start MySQL from the repository root:
 docker compose --env-file .env -f infra/compose.yaml up -d mysql
 docker compose --env-file .env -f infra/compose.yaml ps
 ```
+
+The Compose port mapping makes the MySQL process inside the container available
+to the locally running FastAPI process at `127.0.0.1:3306`. After starting both
+MySQL and FastAPI, verify the real database connection:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/health/ready
+```
+
+Expected response:
+
+```json
+{
+  "status": "ready",
+  "database": "ok"
+}
+```
+
+This endpoint executes `SELECT 1`. It returns HTTP 503 when MySQL cannot be
+reached, while `/api/v1/health` continues to report whether FastAPI itself is
+running.
 
 Open a MySQL command session as the application user:
 

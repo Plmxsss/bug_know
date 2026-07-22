@@ -8,9 +8,11 @@ version = "0.1.0"
 description = "Backend API for the AgriGuard AI learning project"
 requires-python = ">=3.11,<3.14"
 dependencies = [
+    "asyncmy>=0.2.10,<1.0",
     "fastapi>=0.115,<1.0",
     "pydantic>=2.10,<3.0",
     "pydantic-settings>=2.7,<3.0",
+    "sqlalchemy[asyncio]>=2.0,<3.0",
     "uvicorn[standard]>=0.34,<1.0",
 ]
 
