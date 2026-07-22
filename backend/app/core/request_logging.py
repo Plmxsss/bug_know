@@ -17,6 +17,7 @@ async def log_request(
     """Assign a request ID, call the route, and record the result."""
 
     request_id = str(uuid4())
+    request.state.request_id = request_id
     started_at = perf_counter()
 
     try:

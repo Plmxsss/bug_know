@@ -6,6 +6,7 @@ from fastapi import FastAPI
 
 from app.api.router import api_router
 from app.core.config import Settings, get_settings
+from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
 from app.core.request_logging import log_request
 
@@ -21,6 +22,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         version=app_settings.app_version,
     )
     application.middleware("http")(log_request)
+    register_exception_handlers(application)
     application.include_router(api_router)
     return application
 
