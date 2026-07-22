@@ -62,6 +62,34 @@ Expected health response:
 }
 ```
 
+## Run the local MySQL database
+
+Copy the example configuration once, then replace its example passwords:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Start MySQL from the repository root:
+
+```powershell
+docker compose --env-file .env -f infra/compose.yaml up -d mysql
+docker compose --env-file .env -f infra/compose.yaml ps
+```
+
+Open a MySQL command session as the application user:
+
+```powershell
+docker compose --env-file .env -f infra/compose.yaml exec mysql `
+  sh -c 'mysql -u"$MYSQL_USER" -p "$MYSQL_DATABASE"'
+```
+
+Stop the container without deleting its stored database files:
+
+```powershell
+docker compose --env-file .env -f infra/compose.yaml down
+```
+
 ## Existing model assets
 
 The previously trained IP102 dataset, scripts, weights, and experiment outputs
