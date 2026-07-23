@@ -12,7 +12,9 @@ It can also upload, parse, chunk, locally embed, and index provenance-rich
 knowledge sources in MySQL and Qdrant. Retrieval, LLM integration, and the
 evidence-bound diagnosis flow are now connected: reviewed retrieval results
 can be synthesized by local Qwen or a configured API model and persisted as a
-structured report. The Vue frontend remains in progress.
+structured report. The first Vue unit now renders the project shell and reads
+live FastAPI, MySQL, and Qdrant readiness; upload and report screens remain in
+progress.
 
 ## Requirements
 
@@ -102,6 +104,29 @@ Expected health response:
   "service": "agriguard-api",
   "version": "0.1.0"
 }
+```
+
+## Run the Vue development frontend
+
+Node.js 20.19+ or 22.12+ is required by the current Vite release. Install the
+locked dependencies once and start the development server:
+
+```powershell
+Set-Location frontend
+npm install
+npm run dev
+```
+
+Open <http://127.0.0.1:5173>. Vite forwards `/api` and `/media` requests to
+FastAPI on port 8000, so the browser uses the same relative URLs that Nginx
+will serve in production. The current page checks
+`GET /api/v1/health/ready` and displays whether FastAPI, MySQL, and Qdrant are
+reachable.
+
+Verify TypeScript and create the production bundle:
+
+```powershell
+npm run build
 ```
 
 ## Run the local MySQL database
