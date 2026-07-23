@@ -279,6 +279,25 @@ approved the knowledge for diagnosis. Calling the endpoint while embedding is
 disabled returns HTTP 503; indexing the same already-indexed document returns
 HTTP 409 rather than silently replacing reviewed data.
 
+Test retrieval independently from the later language-model step through
+Swagger at `POST /api/v1/knowledge/search`:
+
+```json
+{
+  "entity_id": 1,
+  "query": "稻纵卷叶螟幼虫如何危害水稻叶片？",
+  "top_k": 3
+}
+```
+
+Qdrant first applies an exact `pest_entity_id` payload filter and then ranks
+only that entity's chunks by cosine similarity. The service uses the returned
+point IDs to read the original text and citation fields from MySQL; a Qdrant
+point with no matching indexed MySQL chunk is discarded. A response includes
+the entity's `missing`, `draft`, or `reviewed` status so later diagnosis code
+can require human-reviewed knowledge even though this inspection endpoint
+allows draft retrieval.
+
 Open a MySQL command session as the application user:
 
 ```powershell

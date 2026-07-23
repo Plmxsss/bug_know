@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
-from qdrant_client.models import Distance, PointStruct
+from qdrant_client.models import Distance, MatchValue, PointStruct
 
 from app.core.config import Settings
 from app.rag.vector_database import QdrantVectorDatabase, VectorPoint
@@ -78,3 +78,31 @@ async def test_upsert_converts_project_points_and_waits() -> None:
             payload=point.payload,
         )
     ]
+
+
+async def test_search_requires_exact_pest_entity_filter() -> None:
+    """Similarity search must never span every pest's knowledge."""
+
+    database = _database()
+    database.client.query_points.return_value = SimpleNamespace(
+        points=[
+            SimpleNamespace(
+                id="97c65d7e-2c2e-4da8-b96f-82d0023bbce2",
+                score=0.88,
+            )
+        ]
+    )
+
+    hits = await database.search_by_entity(
+        collection_name="knowledge",
+        query_vector=[1.0, 0.0],
+        pest_entity_id=7,
+        limit=3,
+    )
+
+    options = database.client.query_points.await_args.kwargs
+    condition = options["query_filter"].must[0]
+    assert condition.key == "pest_entity_id"
+    assert condition.match == MatchValue(value=7)
+    assert options["with_payload"] is False
+    assert hits[0].score == pytest.approx(0.88)

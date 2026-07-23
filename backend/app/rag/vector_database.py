@@ -4,7 +4,14 @@ from dataclasses import dataclass
 from typing import Any, Protocol, cast
 
 from qdrant_client import AsyncQdrantClient
-from qdrant_client.models import Distance, PointStruct, VectorParams
+from qdrant_client.models import (
+    Distance,
+    FieldCondition,
+    Filter,
+    MatchValue,
+    PointStruct,
+    VectorParams,
+)
 
 from app.core.config import Settings
 
@@ -16,6 +23,14 @@ class VectorPoint:
     point_id: str
     vector: list[float]
     payload: dict[str, object]
+
+
+@dataclass(frozen=True, slots=True)
+class VectorSearchHit:
+    """Minimal search result independent of Qdrant response classes."""
+
+    point_id: str
+    score: float
 
 
 class VectorDatabaseGateway(Protocol):
@@ -42,6 +57,16 @@ class VectorDatabaseGateway(Protocol):
         points: list[VectorPoint],
     ) -> None:
         """Insert or replace deterministic vector points."""
+
+    async def search_by_entity(
+        self,
+        *,
+        collection_name: str,
+        query_vector: list[float],
+        pest_entity_id: int,
+        limit: int,
+    ) -> list[VectorSearchHit]:
+        """Search only points whose payload belongs to one pest entity."""
 
 
 class QdrantVectorDatabase:
@@ -110,3 +135,32 @@ class QdrantVectorDatabase:
             ],
             wait=True,
         )
+
+    async def search_by_entity(
+        self,
+        *,
+        collection_name: str,
+        query_vector: list[float],
+        pest_entity_id: int,
+        limit: int,
+    ) -> list[VectorSearchHit]:
+        """Run cosine search with a mandatory exact entity payload filter."""
+
+        response = await self.client.query_points(
+            collection_name=collection_name,
+            query=query_vector,
+            query_filter=Filter(
+                must=[
+                    FieldCondition(
+                        key="pest_entity_id",
+                        match=MatchValue(value=pest_entity_id),
+                    )
+                ]
+            ),
+            with_payload=False,
+            limit=limit,
+        )
+        return [
+            VectorSearchHit(point_id=str(point.id), score=float(point.score))
+            for point in response.points
+        ]

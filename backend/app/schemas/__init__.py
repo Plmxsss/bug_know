@@ -13,6 +13,11 @@ from app.schemas.knowledge_document import (
     KnowledgeDocumentIndexResponse,
     KnowledgeDocumentResponse,
 )
+from app.schemas.knowledge_search import (
+    KnowledgeSearchHitResponse,
+    KnowledgeSearchRequest,
+    KnowledgeSearchResponse,
+)
 
 __all__ = [
     "BoundingBoxResponse",
@@ -24,4 +29,7 @@ __all__ = [
     "StoredDetectionResponse",
     "KnowledgeDocumentResponse",
     "KnowledgeDocumentIndexResponse",
+    "KnowledgeSearchHitResponse",
+    "KnowledgeSearchRequest",
+    "KnowledgeSearchResponse",
 ]
