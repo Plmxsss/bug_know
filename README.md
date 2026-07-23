@@ -239,6 +239,15 @@ null. Entity identity and knowledge readiness are separate: even a verified
 identity with `knowledge_status=missing` must not be used to generate a RAG
 answer.
 
+Upload a provenance-rich PDF, UTF-8 text file, or Markdown source through
+Swagger at `POST /api/v1/documents`. Required form fields are `file`, `title`,
+`source_organization`, and one or more `entity_ids`; URL, publication date, and
+region are optional but strongly recommended. Files are stored by SHA-256, and
+byte-identical uploads return HTTP 409. The committed
+`knowledge_sources/` directory contains curated, source-linked inputs used by
+the reproducible demo; an uploaded document is not searchable until the later
+indexing step succeeds.
+
 Open a MySQL command session as the application user:
 
 ```powershell

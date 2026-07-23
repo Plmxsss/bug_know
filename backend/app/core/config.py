@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     yolo_confidence: float = Field(default=0.25, gt=0.0, le=1.0)
     max_upload_bytes: int = 10 * 1024 * 1024
     max_image_pixels: int = 25_000_000
+    max_document_bytes: int = 20 * 1024 * 1024
     storage_dir: Path = Path("storage")
     qdrant_url: str = "http://127.0.0.1:6333"
     qdrant_collection: str = "agriguard_knowledge"
