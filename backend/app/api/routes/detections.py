@@ -1,7 +1,8 @@
 """Routes for reading pest detection tasks."""
 
 import asyncio
-from typing import Annotated, cast
+from pathlib import PurePosixPath
+from typing import Annotated, Literal, cast
 
 from fastapi import (
     APIRouter,
@@ -20,17 +21,45 @@ from app.api.deps import get_db_session
 from app.core.config import Settings
 from app.core.exceptions import AppError, ErrorResponse
 from app.ml.predictors.types import ImagePredictor
-from app.repositories import DetectionTaskRepository
+from app.models import DetectionTask
+from app.repositories import DetectionObjectRepository, DetectionTaskRepository
 from app.schemas import (
     BoundingBoxResponse,
     DetectionCreateResponse,
     DetectionResponse,
+    DetectionTaskDetailResponse,
     DetectionTaskListResponse,
     DetectionTaskResponse,
+    StoredDetectionResponse,
 )
 from app.services import DetectionRunService, ImageStorage
 
 router = APIRouter(prefix="/detections", tags=["detections"])
+
+
+def _annotated_image_url(path: str | None) -> str | None:
+    """Convert an internal storage key to the only public image path."""
+
+    if path is None:
+        return None
+    return f"/media/annotated/{PurePosixPath(path).name}"
+
+
+def _task_response(task: DetectionTask) -> DetectionTaskResponse:
+    """Serialize a task without exposing original or annotated storage keys."""
+
+    return DetectionTaskResponse(
+        id=task.id,
+        model_version_id=task.model_version_id,
+        annotated_image_url=_annotated_image_url(task.annotated_image_path),
+        status=cast(
+            Literal["pending", "processing", "completed", "failed"],
+            task.status,
+        ),
+        error_message=task.error_message,
+        created_at=task.created_at,
+        completed_at=task.completed_at,
+    )
 
 
 @router.post(
@@ -118,7 +147,7 @@ async def list_detection_tasks(
         limit=page_size,
     )
     return DetectionTaskListResponse(
-        items=[DetectionTaskResponse.model_validate(task) for task in tasks],
+        items=[_task_response(task) for task in tasks],
         total=total,
         page=page,
         page_size=page_size,
@@ -127,7 +156,7 @@ async def list_detection_tasks(
 
 @router.get(
     "/{task_id}",
-    response_model=DetectionTaskResponse,
+    response_model=DetectionTaskDetailResponse,
     status_code=status.HTTP_200_OK,
     responses={status.HTTP_404_NOT_FOUND: {"model": ErrorResponse}},
     summary="Get one detection task",
@@ -135,7 +164,7 @@ async def list_detection_tasks(
 async def get_detection_task(
     task_id: Annotated[int, Path(ge=1)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
-) -> DetectionTaskResponse:
+) -> DetectionTaskDetailResponse:
     """Return one stored task without exposing internal database objects."""
 
     repository = DetectionTaskRepository(session)
@@ -147,4 +176,24 @@ async def get_detection_task(
             message=f"Detection task {task_id} does not exist.",
         )
 
-    return DetectionTaskResponse.model_validate(task)
+    objects = await DetectionObjectRepository(session).list_by_task_id(task_id)
+    task_response = _task_response(task)
+    return DetectionTaskDetailResponse(
+        **task_response.model_dump(),
+        detections=[
+            StoredDetectionResponse(
+                object_id=detected_object.id,
+                class_id=detected_object.class_id,
+                raw_class_name=detected_object.raw_class_name,
+                normalized_entity_id=detected_object.normalized_entity_id,
+                confidence=detected_object.confidence,
+                bbox=BoundingBoxResponse(
+                    x1=detected_object.bbox_x1,
+                    y1=detected_object.bbox_y1,
+                    x2=detected_object.bbox_x2,
+                    y2=detected_object.bbox_y2,
+                ),
+            )
+            for detected_object in objects
+        ],
+    )

@@ -14,7 +14,7 @@ from app.api.deps import get_db_session
 from app.core.config import Settings
 from app.main import create_app
 from app.ml.predictors import BoundingBox, Detection, PredictionResult
-from app.models import DetectionTask
+from app.models import DetectionObject, DetectionTask
 from app.services import AnnotatedImage, DetectionRunResult
 
 
@@ -53,13 +53,34 @@ def test_get_detection_task_returns_public_record() -> None:
 
     application.dependency_overrides[get_db_session] = override_session
 
-    with TestClient(application) as client:
+    detected_object = DetectionObject(
+        id=5,
+        task_id=1,
+        class_id=0,
+        raw_class_name="rice leaf folder",
+        normalized_entity_id=None,
+        confidence=0.69,
+        bbox_x1=10.0,
+        bbox_y1=20.0,
+        bbox_x2=100.0,
+        bbox_y2=120.0,
+    )
+    with (
+        TestClient(application) as client,
+        patch(
+            "app.api.routes.detections.DetectionObjectRepository.list_by_task_id",
+            new=AsyncMock(return_value=[detected_object]),
+        ),
+    ):
         response = client.get("/api/v1/detections/1")
 
     assert response.status_code == 200
     assert response.json()["id"] == 1
     assert response.json()["status"] == "pending"
-    assert response.json()["original_image_path"] == "data/image/IP000000000.jpg"
+    assert response.json()["detections"][0]["object_id"] == 5
+    assert response.json()["detections"][0]["bbox"]["x2"] == 100.0
+    assert "original_image_path" not in response.json()
+    assert "annotated_image_path" not in response.json()
 
 
 def test_get_missing_detection_task_returns_standard_404() -> None:
@@ -118,6 +139,7 @@ def test_list_detection_tasks_returns_pagination_metadata() -> None:
     assert response.json()["page"] == 1
     assert response.json()["page_size"] == 10
     assert response.json()["items"][0]["id"] == 1
+    assert "original_image_path" not in response.json()["items"][0]
 
 
 def test_create_detection_returns_completed_prediction(tmp_path) -> None:

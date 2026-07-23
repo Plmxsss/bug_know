@@ -13,8 +13,7 @@ class DetectionTaskResponse(BaseModel):
 
     id: int
     model_version_id: int
-    original_image_path: str
-    annotated_image_path: str | None
+    annotated_image_url: str | None
     status: Literal["pending", "processing", "completed", "failed"]
     error_message: str | None
     created_at: datetime
@@ -57,3 +56,20 @@ class DetectionCreateResponse(BaseModel):
     annotated_image_url: str
     inference_ms: float
     device: str
+
+
+class StoredDetectionResponse(BaseModel):
+    """One database-backed detection returned by the task detail endpoint."""
+
+    object_id: int
+    class_id: int
+    raw_class_name: str
+    normalized_entity_id: int | None
+    confidence: float
+    bbox: BoundingBoxResponse
+
+
+class DetectionTaskDetailResponse(DetectionTaskResponse):
+    """A task plus every persisted bounding box produced for its image."""
+
+    detections: list[StoredDetectionResponse]
