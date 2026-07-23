@@ -139,6 +139,17 @@ The command calculates the file's SHA-256 fingerprint, inserts the record, and
 prints its database-generated ID and creation time. Running the same name and
 version again returns the existing row instead of inserting a duplicate.
 
+Create a pending detection task for a local image:
+
+```powershell
+python scripts/create_detection_task.py `
+  --model-version-id 1 `
+  --image-path ..\data\image\IP000000000.jpg
+```
+
+The referenced model version must already exist. MySQL rejects a task whose
+`model_version_id` does not match a row in `model_versions`.
+
 Open a MySQL command session as the application user:
 
 ```powershell
