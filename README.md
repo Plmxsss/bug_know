@@ -26,6 +26,28 @@ python -m pip install --upgrade pip
 python -m pip install -e ".\backend[dev]"
 ```
 
+Install the optional YOLO inference dependencies:
+
+```powershell
+python -m pip install -e ".\backend[dev,ml]"
+```
+
+The default Python package source may install CPU-only PyTorch. On this project's
+CUDA 12.8 Windows workstation, install the verified GPU build from the official
+PyTorch package source:
+
+```powershell
+python -m pip install --force-reinstall `
+  torch==2.8.0 torchvision==0.23.0 `
+  --index-url https://download.pytorch.org/whl/cu128
+```
+
+Verify that the result prints `True`:
+
+```powershell
+python -c "import torch; print(torch.cuda.is_available())"
+```
+
 Keep an older training environment separate instead of upgrading its Python in
 place. Binary packages such as PyTorch and OpenCV are tied to a Python version;
 the trained `.pt` weight can later be validated from the application environment.

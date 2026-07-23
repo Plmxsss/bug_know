@@ -44,6 +44,14 @@
     "first_class_name": "稻纵卷叶螟",
     "last_class_name": "叶蝉科"
   },
+  "deployment_runtime": {
+    "python_version": "3.11",
+    "torch_version": "2.8.0+cu128",
+    "ultralytics_version": "8.4.104",
+    "cuda_available": true,
+    "device_name": "NVIDIA GeForce RTX 5070 Ti",
+    "device_memory_gib": 15.92
+  },
   "smoke_regression_images": [
     {
       "path": "data/image/IP000000000.jpg",

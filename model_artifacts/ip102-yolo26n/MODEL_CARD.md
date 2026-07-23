@@ -13,6 +13,9 @@
 The weight loaded successfully with Ultralytics 8.4.95. This records the
 validation runtime, not a proven original training-library version.
 
+Deployment was additionally verified with Python 3.11, PyTorch 2.8.0+cu128,
+Ultralytics 8.4.104, and an NVIDIA GeForce RTX 5070 Ti.
+
 ## Intended use
 
 The model is intended for educational and demonstration use in AgriGuard AI.
@@ -86,3 +89,6 @@ Selected weakest classes by mAP50-95:
 The manifest records the weight fingerprint, core training settings, metric
 artifact paths, and three local smoke-regression images with their SHA-256
 fingerprints. Dataset images and binary weights remain outside Git.
+
+The first smoke image produced one class-0 detection (`稻纵卷叶螟`) with
+confidence 0.6903. A reused predictor produced the same result after GPU warmup.
