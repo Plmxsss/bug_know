@@ -121,6 +121,24 @@ alembic upgrade head
 Alembic reads the same private root `.env` file as the API. Database passwords
 are not stored in `alembic.ini` or migration files.
 
+## Register the trained model
+
+After applying migrations, register the local IP102 weights from the `backend`
+directory:
+
+```powershell
+python scripts/register_model_version.py `
+  --name ip102-yolo26n `
+  --version 1.0.0 `
+  --weights-path ..\data\runs\yolo26n_bug_know-5\weights\best.pt `
+  --class-count 102 `
+  --active
+```
+
+The command calculates the file's SHA-256 fingerprint, inserts the record, and
+prints its database-generated ID and creation time. Running the same name and
+version again returns the existing row instead of inserting a duplicate.
+
 Open a MySQL command session as the application user:
 
 ```powershell
