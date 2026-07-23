@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref } from 'vue'
 import DiagnosisReportPanel from '../components/DiagnosisReportPanel.vue'
+import KnowledgeQuestionPanel from '../components/KnowledgeQuestionPanel.vue'
 import { useDiagnosisStore } from '../stores/diagnosis'
 import { useDetectionStore } from '../stores/detection'
 
@@ -169,6 +170,10 @@ onBeforeUnmount(clearPreview)
       v-if="detectionStore.result"
       :task-id="detectionStore.result.task_id"
       :detections="detectionStore.result.detections"
+    />
+    <KnowledgeQuestionPanel
+      v-if="detectionStore.result?.detections.length"
+      :task-id="detectionStore.result.task_id"
     />
   </section>
 </template>

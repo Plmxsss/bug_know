@@ -37,6 +37,7 @@ The current learning unit contains:
 - `src/views/HistoryView.vue`: MySQL-backed, refresh-safe paginated history.
 - `src/views/TaskDetailView.vue`: stored boxes and optional persisted report.
 - `src/components/DiagnosisReportContent.vue`: reusable report presentation.
+- `src/components/KnowledgeQuestionPanel.vue`: bounded Agent questions and trace.
 - `vite.config.ts`: Vue plugin and local reverse-proxy configuration.
 
 Vitest replaces the real detection and diagnosis APIs in store tests, so

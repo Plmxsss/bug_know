@@ -463,6 +463,8 @@ Agent may make at most three calls to its only read-only retrieval tool. A
 second structured model call generates the public answer; its citations must
 be a subset of the exact points observed during those tool calls. The real
 local task-7 smoke test completed successfully with one official citation.
+The Vue detection and task-detail pages expose the same flow and display the
+exact query observed by the Agent tool alongside the validated answer.
 
 ## Generate and read a diagnosis report
 

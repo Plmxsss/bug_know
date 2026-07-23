@@ -8,6 +8,7 @@ import {
 } from '../api/detections'
 import { apiErrorCode, apiErrorMessage } from '../api/http'
 import DiagnosisReportContent from '../components/DiagnosisReportContent.vue'
+import KnowledgeQuestionPanel from '../components/KnowledgeQuestionPanel.vue'
 
 const route = useRoute()
 const task = ref<DetectionTaskDetail | null>(null)
@@ -114,6 +115,11 @@ onMounted(loadTask)
       </section>
 
       <p v-else class="diagnosis-notice">该任务尚未生成知识诊断报告。</p>
+
+      <KnowledgeQuestionPanel
+        v-if="task.status === 'completed' && task.detections.length"
+        :task-id="task.id"
+      />
     </template>
   </section>
 </template>
