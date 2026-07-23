@@ -69,6 +69,12 @@ class Settings(BaseSettings):
     llm_temperature: float = Field(default=0.0, ge=0.0, le=2.0)
     llm_max_tokens: int = Field(default=2048, ge=128, le=16384)
     agent_enabled: bool = False
+    agent_rate_limit_requests: int = Field(default=5, ge=1, le=100)
+    agent_rate_limit_window_seconds: int = Field(
+        default=60,
+        ge=1,
+        le=3600,
+    )
 
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",

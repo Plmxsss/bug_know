@@ -471,6 +471,20 @@ local task-7 smoke test completed successfully with one official citation.
 The Vue detection and task-detail pages expose the same flow and display the
 exact query observed by the Agent tool alongside the validated answer.
 
+Agent questions use Redis for a fixed-window cost guard. By default, one
+client/task pair may submit five questions per 60 seconds:
+
+```dotenv
+AGRIGUARD_AGENT_RATE_LIMIT_REQUESTS=5
+AGRIGUARD_AGENT_RATE_LIMIT_WINDOW_SECONDS=60
+```
+
+The Redis key contains a truncated SHA-256 digest rather than the raw client
+address. One Lua script atomically increments the counter and sets its TTL on
+first use. Requests over the limit return HTTP 429 before loading the embedding
+model or invoking Qwen. Redis failure returns HTTP 503 instead of silently
+bypassing the guard.
+
 ## Generate and read a diagnosis report
 
 Before diagnosis, the detection task must be `completed`, every detected class

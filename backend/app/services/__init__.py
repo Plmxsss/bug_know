@@ -26,6 +26,7 @@ from app.services.pest_mapping_review import (
     PestMappingReviewService,
 )
 from app.services.pest_mapping_seed import PestMappingSeedService, SeedSummary
+from app.services.rate_limit import FixedWindowRateLimiter, RateLimitDecision
 from app.services.report_generation import (
     DetectedEntityContext,
     GeneratedReport,
@@ -57,6 +58,8 @@ __all__ = [
     "DetectedEntityContext",
     "GeneratedReport",
     "ReportGenerator",
+    "FixedWindowRateLimiter",
+    "RateLimitDecision",
     "SeedSummary",
     "StoredImage",
     "StoredDocument",

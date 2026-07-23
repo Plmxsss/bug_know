@@ -1,5 +1,6 @@
 """Task-scoped agricultural follow-up questions using a bounded Agent."""
 
+from hashlib import sha256
 from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, Path, Request, status
@@ -7,13 +8,14 @@ from pydantic import SecretStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db_session
+from app.cache import RedisGateway
 from app.core.config import Settings
 from app.core.exceptions import AppError
 from app.llm import LLMProvider
 from app.rag.embeddings import TextEmbedder
 from app.rag.vector_database import VectorDatabaseGateway
 from app.schemas import KnowledgeQuestionRequest, KnowledgeQuestionResponse
-from app.services import KnowledgeQuestionService
+from app.services import FixedWindowRateLimiter, KnowledgeQuestionService
 from app.services.knowledge_question import QueryPlanner
 
 router = APIRouter(prefix="/detections", tags=["knowledge questions"])
@@ -41,6 +43,26 @@ async def ask_detection_question(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             code="AGENT_DISABLED",
             message="The bounded LangChain Agent is not enabled.",
+        )
+
+    client_host = request.client.host if request.client is not None else "unknown"
+    client_digest = sha256(client_host.encode("utf-8")).hexdigest()[:24]
+    rate_limit = await FixedWindowRateLimiter(
+        cast(RedisGateway, request.app.state.redis)
+    ).check(
+        key=f"rate:agent-question:{task_id}:{client_digest}",
+        limit=settings.agent_rate_limit_requests,
+        window_seconds=settings.agent_rate_limit_window_seconds,
+    )
+    if not rate_limit.allowed:
+        raise AppError(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            code="AGENT_RATE_LIMITED",
+            message="Too many Agent questions for this task. Try again later.",
+            details={
+                "limit": rate_limit.limit,
+                "window_seconds": rate_limit.window_seconds,
+            },
         )
     if embedder is None:
         raise AppError(
