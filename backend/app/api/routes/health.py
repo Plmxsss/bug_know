@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from app import __version__
 from app.core.exceptions import AppError
 from app.db.session import DatabaseGateway
+from app.rag.vector_database import VectorDatabaseGateway
 
 
 class HealthResponse(BaseModel):
@@ -23,6 +24,7 @@ class ReadinessResponse(BaseModel):
 
     status: Literal["ready"]
     database: Literal["ok"]
+    vector_database: Literal["ok"]
 
 
 router = APIRouter(tags=["system"])
@@ -63,4 +65,18 @@ async def readiness_check(request: Request) -> ReadinessResponse:
             message="The database is currently unavailable.",
         ) from exc
 
-    return ReadinessResponse(status="ready", database="ok")
+    vector_database: VectorDatabaseGateway = request.app.state.vector_database
+    try:
+        await vector_database.ping()
+    except Exception as exc:
+        raise AppError(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="VECTOR_DATABASE_UNAVAILABLE",
+            message="The vector database is currently unavailable.",
+        ) from exc
+
+    return ReadinessResponse(
+        status="ready",
+        database="ok",
+        vector_database="ok",
+    )

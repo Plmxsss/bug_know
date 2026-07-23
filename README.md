@@ -107,16 +107,17 @@ Copy the example configuration once, then replace its example passwords:
 Copy-Item .env.example .env
 ```
 
-Start MySQL from the repository root:
+Start MySQL and Qdrant from the repository root:
 
 ```powershell
-docker compose --env-file .env -f infra/compose.yaml up -d mysql
+docker compose --env-file .env -f infra/compose.yaml up -d mysql qdrant
 docker compose --env-file .env -f infra/compose.yaml ps
 ```
 
 The Compose port mapping makes the MySQL process inside the container available
-to the locally running FastAPI process at `127.0.0.1:3306`. After starting both
-MySQL and FastAPI, verify the real database connection:
+to FastAPI at `127.0.0.1:3306` and Qdrant's HTTP API at
+`127.0.0.1:6333`. Qdrant data uses a named Docker volume rather than a Windows
+bind mount. After starting the containers and FastAPI, verify both connections:
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:8000/api/v1/health/ready
@@ -127,13 +128,15 @@ Expected response:
 ```json
 {
   "status": "ready",
-  "database": "ok"
+  "database": "ok",
+  "vector_database": "ok"
 }
 ```
 
-This endpoint executes `SELECT 1`. It returns HTTP 503 when MySQL cannot be
-reached, while `/api/v1/health` continues to report whether FastAPI itself is
-running.
+This endpoint executes `SELECT 1` in MySQL and requests Qdrant collection
+metadata. It returns HTTP 503 with a service-specific error code when either
+dependency cannot be reached, while `/api/v1/health` continues to report
+whether FastAPI itself is running.
 
 ## Run a real image detection
 

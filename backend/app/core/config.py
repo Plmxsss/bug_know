@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     max_upload_bytes: int = 10 * 1024 * 1024
     max_image_pixels: int = 25_000_000
     storage_dir: Path = Path("storage")
+    qdrant_url: str = "http://127.0.0.1:6333"
+    qdrant_collection: str = "agriguard_knowledge"
 
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",

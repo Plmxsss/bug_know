@@ -17,6 +17,7 @@ from app.core.logging import configure_logging
 from app.core.request_logging import log_request
 from app.db.session import Database, DatabaseGateway
 from app.ml.predictors.types import ImagePredictor
+from app.rag.vector_database import QdrantVectorDatabase, VectorDatabaseGateway
 
 PredictorFactory = Callable[[Settings], ImagePredictor]
 
@@ -44,12 +45,14 @@ def load_yolo_predictor(settings: Settings) -> ImagePredictor:
 def create_app(
     settings: Settings | None = None,
     database: DatabaseGateway | None = None,
+    vector_database: VectorDatabaseGateway | None = None,
     predictor_factory: PredictorFactory | None = None,
 ) -> FastAPI:
     """Create and configure the FastAPI application."""
 
     app_settings = settings or get_settings()
     app_database = database or Database(app_settings)
+    app_vector_database = vector_database or QdrantVectorDatabase(app_settings)
     configure_logging(app_settings.log_level)
 
     @asynccontextmanager
@@ -57,6 +60,7 @@ def create_app(
         """Keep shared resources available until the application stops."""
 
         application.state.database = app_database
+        application.state.vector_database = app_vector_database
         application.state.settings = app_settings
         application.state.predictor_lock = asyncio.Lock()
         if not hasattr(application.state, "predictor"):
@@ -66,7 +70,10 @@ def create_app(
                 else None
             )
         yield
-        await app_database.close()
+        try:
+            await app_vector_database.close()
+        finally:
+            await app_database.close()
 
     application = FastAPI(
         title=app_settings.app_name,
