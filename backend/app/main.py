@@ -16,6 +16,7 @@ from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
 from app.core.request_logging import log_request
 from app.db.session import Database, DatabaseGateway
+from app.llm import LLMProvider, OpenAICompatibleProvider
 from app.ml.predictors.types import ImagePredictor
 from app.rag.embeddings import SentenceTransformerEmbedder, TextEmbedder
 from app.rag.vector_database import QdrantVectorDatabase, VectorDatabaseGateway
@@ -54,6 +55,7 @@ def create_app(
     settings: Settings | None = None,
     database: DatabaseGateway | None = None,
     vector_database: VectorDatabaseGateway | None = None,
+    llm_provider: LLMProvider | None = None,
     predictor_factory: PredictorFactory | None = None,
     embedder_factory: EmbedderFactory | None = None,
 ) -> FastAPI:
@@ -84,11 +86,24 @@ def create_app(
                 if app_settings.embedding_enabled
                 else None
             )
+        if not hasattr(application.state, "llm_provider"):
+            application.state.llm_provider = (
+                llm_provider
+                or (
+                    OpenAICompatibleProvider(app_settings)
+                    if app_settings.llm_enabled
+                    else None
+                )
+            )
         yield
         try:
-            await app_vector_database.close()
+            if application.state.llm_provider is not None:
+                await application.state.llm_provider.close()
         finally:
-            await app_database.close()
+            try:
+                await app_vector_database.close()
+            finally:
+                await app_database.close()
 
     application = FastAPI(
         title=app_settings.app_name,

@@ -48,6 +48,20 @@ class Settings(BaseSettings):
     embedding_dimension: int = Field(default=512, ge=1)
     embedding_batch_size: int = Field(default=16, ge=1, le=256)
     embedding_cache_dir: Path = Path("models/embeddings")
+    llm_enabled: bool = False
+    llm_provider: Literal["ollama", "openai-compatible"] = "ollama"
+    llm_base_url: str = "http://127.0.0.1:11434/v1"
+    llm_api_key: SecretStr = SecretStr("")
+    llm_model: str = "qwen3:4b-instruct-2507-q4_K_M"
+    llm_structured_mode: Literal[
+        "json_schema",
+        "json_object",
+        "prompt_only",
+    ] = "json_schema"
+    llm_timeout_seconds: float = Field(default=120.0, gt=0.0, le=600.0)
+    llm_max_retries: int = Field(default=2, ge=0, le=5)
+    llm_temperature: float = Field(default=0.0, ge=0.0, le=2.0)
+    llm_max_tokens: int = Field(default=2048, ge=128, le=16384)
 
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",

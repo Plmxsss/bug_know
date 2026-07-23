@@ -339,6 +339,40 @@ chunks, at least two distinct source organizations, and a source URL for every
 document. These objective checks do not replace content review; the reviewer
 and note are recorded with UTC time for auditability.
 
+## Configure a language-model provider
+
+The backend uses one `LLMProvider` interface for both local and cloud-hosted
+models. Its first implementation calls an OpenAI-compatible
+`/v1/chat/completions` endpoint, requests structured JSON, and validates the
+returned content with Pydantic before business code can use it. Temporary
+network errors and selected HTTP statuses are retried against the same
+provider; local failure does not automatically send data to a cloud service.
+
+For the default Windows development setup, install Ollama and pull the official
+Qwen3 4B non-thinking instruct quantization:
+
+```powershell
+ollama pull qwen3:4b-instruct-2507-q4_K_M
+ollama list
+```
+
+Then set the private `.env`:
+
+```dotenv
+AGRIGUARD_LLM_ENABLED=true
+AGRIGUARD_LLM_PROVIDER=ollama
+AGRIGUARD_LLM_BASE_URL=http://127.0.0.1:11434/v1
+AGRIGUARD_LLM_API_KEY=
+AGRIGUARD_LLM_MODEL=qwen3:4b-instruct-2507-q4_K_M
+AGRIGUARD_LLM_STRUCTURED_MODE=json_schema
+```
+
+An explicitly selected DeepSeek, Qwen, or other compatible cloud endpoint uses
+the same fields with `AGRIGUARD_LLM_PROVIDER=openai-compatible`, its HTTPS base
+URL, API key, and model name. Use `json_object` or `prompt_only` only when that
+provider does not support JSON Schema. API keys remain in `.env` and are never
+returned to the frontend or written to logs.
+
 Open a MySQL command session as the application user:
 
 ```powershell
