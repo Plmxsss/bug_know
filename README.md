@@ -296,6 +296,14 @@ approved the knowledge for diagnosis. Calling the endpoint while embedding is
 disabled returns HTTP 503; indexing the same already-indexed document returns
 HTTP 409 rather than silently replacing reviewed data.
 
+After an intentional parsing or chunking change, explicitly rebuild an indexed
+document with
+`POST /api/v1/documents/{document_id}/index?reindex=true`. The service upserts
+deterministic replacement points and deletes obsolete Qdrant point IDs.
+Headings used only for structured provenance, such as `来源信息`, are stored as
+document metadata but excluded from embeddings so they do not consume Top-K
+semantic result slots.
+
 Test retrieval independently from the later language-model step through
 Swagger at `POST /api/v1/knowledge/search`:
 
@@ -314,6 +322,22 @@ point with no matching indexed MySQL chunk is discarded. A response includes
 the entity's `missing`, `draft`, or `reviewed` status so later diagnosis code
 can require human-reviewed knowledge even though this inspection endpoint
 allows draft retrieval.
+
+Promote one entity from `draft` to `reviewed` only after reading its indexed
+sources and checking the regional and safety boundaries:
+
+```powershell
+python scripts/review_pest_knowledge.py `
+  --entity-code ip102-class-000 `
+  --expected-common-name 稻纵卷叶螟 `
+  --reviewed-by project-maintainer `
+  --note "Reviewed source content, citations, regional limits, and safety."
+```
+
+The automated gate requires at least two indexed documents with retrievable
+chunks, at least two distinct source organizations, and a source URL for every
+document. These objective checks do not replace content review; the reviewer
+and note are recorded with UTC time for auditability.
 
 Open a MySQL command session as the application user:
 

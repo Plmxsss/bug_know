@@ -39,6 +39,7 @@ class DocumentSnapshot:
     file_type: str
     checksum_sha256: str
     entity_ids: tuple[int, ...]
+    previous_point_ids: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,10 +74,18 @@ class DocumentIndexService:
             overlap=settings.rag_chunk_overlap,
         )
 
-    async def index(self, document_id: int) -> DocumentIndexResult:
-        """Index one uploaded or previously failed document."""
+    async def index(
+        self,
+        document_id: int,
+        *,
+        allow_reindex: bool = False,
+    ) -> DocumentIndexResult:
+        """Index an eligible document, optionally replacing an existing index."""
 
-        snapshot = await self._claim(document_id)
+        snapshot = await self._claim(
+            document_id,
+            allow_reindex=allow_reindex,
+        )
         try:
             source_path = self._resolve_source_path(snapshot.file_path)
             sections = await run_in_threadpool(
@@ -84,7 +93,15 @@ class DocumentIndexService:
                 source_path,
                 file_type=snapshot.file_type,
             )
-            chunks = self._chunker.split(sections)
+            chunks = tuple(
+                chunk
+                for chunk in self._chunker.split(sections)
+                if not self._is_provenance_only_heading(chunk.heading)
+            )
+            if not chunks:
+                raise ValueError(
+                    "The document contains no indexable knowledge sections."
+                )
             vectors = await run_in_threadpool(
                 self._embedder.embed_documents,
                 [chunk.content for chunk in chunks],
@@ -105,6 +122,14 @@ class DocumentIndexService:
                 collection_name=self._settings.qdrant_collection,
                 points=points,
             )
+            new_point_ids = {point.point_id for point in points}
+            stale_point_ids = sorted(
+                set(snapshot.previous_point_ids) - new_point_ids
+            )
+            await self._vector_database.delete_points(
+                collection_name=self._settings.qdrant_collection,
+                point_ids=stale_point_ids,
+            )
             await self._complete(snapshot, inserts)
             return DocumentIndexResult(
                 document_id=snapshot.id,
@@ -117,7 +142,12 @@ class DocumentIndexService:
             await self._record_failure(snapshot.id, exc)
             raise
 
-    async def _claim(self, document_id: int) -> DocumentSnapshot:
+    async def _claim(
+        self,
+        document_id: int,
+        *,
+        allow_reindex: bool,
+    ) -> DocumentSnapshot:
         """Lock and move an eligible document to processing."""
 
         async with self._session.begin():
@@ -128,7 +158,10 @@ class DocumentIndexService:
                     code="KNOWLEDGE_DOCUMENT_NOT_FOUND",
                     message=f"Knowledge document {document_id} does not exist.",
                 )
-            if document.status not in {"uploaded", "failed"}:
+            eligible_statuses = {"uploaded", "failed"}
+            if allow_reindex:
+                eligible_statuses.add("indexed")
+            if document.status not in eligible_statuses:
                 raise AppError(
                     status_code=status.HTTP_409_CONFLICT,
                     code="DOCUMENT_NOT_INDEXABLE",
@@ -137,7 +170,14 @@ class DocumentIndexService:
             entity_ids = tuple(await self._repository.list_entity_ids(document.id))
             if not entity_ids:
                 raise RuntimeError("Document has no associated pest entities.")
-            snapshot = self._snapshot(document, entity_ids)
+            previous_point_ids = tuple(
+                await self._repository.list_chunk_point_ids(document.id)
+            )
+            snapshot = self._snapshot(
+                document,
+                entity_ids,
+                previous_point_ids,
+            )
             document.status = "processing"
             document.error_message = None
             await self._session.flush()
@@ -254,6 +294,7 @@ class DocumentIndexService:
     def _snapshot(
         document: KnowledgeDocument,
         entity_ids: tuple[int, ...],
+        previous_point_ids: tuple[str, ...],
     ) -> DocumentSnapshot:
         """Copy ORM fields needed after commit into an immutable value."""
 
@@ -268,4 +309,17 @@ class DocumentIndexService:
             file_type=document.file_type,
             checksum_sha256=document.checksum_sha256,
             entity_ids=entity_ids,
+            previous_point_ids=previous_point_ids,
         )
+
+    @staticmethod
+    def _is_provenance_only_heading(heading: str | None) -> bool:
+        """Exclude structured source headers already stored as metadata."""
+
+        if heading is None:
+            return False
+        return heading.strip().casefold() in {
+            "来源信息",
+            "source information",
+            "provenance",
+        }

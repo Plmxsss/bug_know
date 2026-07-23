@@ -9,6 +9,7 @@ from qdrant_client.models import (
     FieldCondition,
     Filter,
     MatchValue,
+    PointIdsList,
     PointStruct,
     VectorParams,
 )
@@ -67,6 +68,14 @@ class VectorDatabaseGateway(Protocol):
         limit: int,
     ) -> list[VectorSearchHit]:
         """Search only points whose payload belongs to one pest entity."""
+
+    async def delete_points(
+        self,
+        *,
+        collection_name: str,
+        point_ids: list[str],
+    ) -> None:
+        """Delete obsolete deterministic points after preprocessing changes."""
 
 
 class QdrantVectorDatabase:
@@ -164,3 +173,19 @@ class QdrantVectorDatabase:
             VectorSearchHit(point_id=str(point.id), score=float(point.score))
             for point in response.points
         ]
+
+    async def delete_points(
+        self,
+        *,
+        collection_name: str,
+        point_ids: list[str],
+    ) -> None:
+        """Delete obsolete points and wait until Qdrant applies the change."""
+
+        if not point_ids:
+            return
+        await self.client.delete(
+            collection_name=collection_name,
+            points_selector=PointIdsList(points=cast(Any, point_ids)),
+            wait=True,
+        )

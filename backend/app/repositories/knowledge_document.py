@@ -67,6 +67,16 @@ class KnowledgeDocumentRepository:
         )
         return list(result.scalars().all())
 
+    async def list_chunk_point_ids(self, document_id: int) -> list[str]:
+        """Return vector point IDs currently owned by one document."""
+
+        result = await self._session.execute(
+            select(RagChunk.qdrant_point_id).where(
+                RagChunk.document_id == document_id
+            )
+        )
+        return list(result.scalars().all())
+
     async def get_existing_entity_ids(
         self,
         entity_ids: Sequence[int],

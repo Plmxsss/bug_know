@@ -36,6 +36,9 @@ class PestEntity(Base):
         default="missing",
         server_default="missing",
     )
+    knowledge_reviewed_at: Mapped[datetime | None] = mapped_column()
+    knowledge_reviewed_by: Mapped[str | None] = mapped_column(String(100))
+    knowledge_review_note: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

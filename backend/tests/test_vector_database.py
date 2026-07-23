@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
-from qdrant_client.models import Distance, MatchValue, PointStruct
+from qdrant_client.models import Distance, MatchValue, PointIdsList, PointStruct
 
 from app.core.config import Settings
 from app.rag.vector_database import QdrantVectorDatabase, VectorPoint
@@ -106,3 +106,22 @@ async def test_search_requires_exact_pest_entity_filter() -> None:
     assert condition.match == MatchValue(value=7)
     assert options["with_payload"] is False
     assert hits[0].score == pytest.approx(0.88)
+
+
+async def test_delete_obsolete_points_waits_for_qdrant() -> None:
+    """Reindex cleanup should finish before the operation reports success."""
+
+    database = _database()
+
+    await database.delete_points(
+        collection_name="knowledge",
+        point_ids=["97c65d7e-2c2e-4da8-b96f-82d0023bbce2"],
+    )
+
+    database.client.delete.assert_awaited_once_with(
+        collection_name="knowledge",
+        points_selector=PointIdsList(
+            points=["97c65d7e-2c2e-4da8-b96f-82d0023bbce2"]
+        ),
+        wait=True,
+    )

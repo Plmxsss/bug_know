@@ -48,6 +48,7 @@ def _snapshot() -> DocumentSnapshot:
         file_type="md",
         checksum_sha256="a" * 64,
         entity_ids=(1, 2),
+        previous_point_ids=(),
     )
 
 
@@ -99,3 +100,13 @@ def test_source_path_cannot_escape_storage_root(tmp_path: Path) -> None:
         assert "unavailable" in str(exc)
     else:
         raise AssertionError("Directory traversal should have been rejected.")
+
+
+def test_provenance_heading_is_not_semantic_knowledge(tmp_path: Path) -> None:
+    """Structured source metadata should not consume a retrieval result slot."""
+
+    service = _service(tmp_path)
+
+    assert service._is_provenance_only_heading("来源信息") is True
+    assert service._is_provenance_only_heading("Source Information") is True
+    assert service._is_provenance_only_heading("为害特征") is False

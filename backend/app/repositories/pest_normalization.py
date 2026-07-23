@@ -20,6 +20,16 @@ class PestEntityRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_by_code_for_update(self, entity_code: str) -> PestEntity | None:
+        """Lock one entity while recording a knowledge review decision."""
+
+        result = await self._session.execute(
+            select(PestEntity)
+            .where(PestEntity.entity_code == entity_code)
+            .with_for_update()
+        )
+        return result.scalar_one_or_none()
+
     async def create_skeleton(
         self,
         *,
@@ -34,6 +44,9 @@ class PestEntityRepository:
             scientific_name=None,
             description=None,
             knowledge_status="missing",
+            knowledge_reviewed_at=None,
+            knowledge_reviewed_by=None,
+            knowledge_review_note=None,
         )
         self._session.add(entity)
         await self._session.flush()

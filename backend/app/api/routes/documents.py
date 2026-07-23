@@ -9,6 +9,7 @@ from fastapi import (
     File,
     Form,
     Path,
+    Query,
     Request,
     UploadFile,
     status,
@@ -97,6 +98,14 @@ async def index_document(
     request: Request,
     document_id: Annotated[int, Path(ge=1)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
+    reindex: Annotated[
+        bool,
+        Query(
+            description=(
+                "Explicitly replace an existing index after preprocessing changes."
+            )
+        ),
+    ] = False,
 ) -> KnowledgeDocumentIndexResponse:
     """Run the synchronous MVP indexing pipeline for one source."""
 
@@ -117,7 +126,7 @@ async def index_document(
         settings=settings,
         embedder=embedder,
         vector_database=vector_database,
-    ).index(document_id)
+    ).index(document_id, allow_reindex=reindex)
     return KnowledgeDocumentIndexResponse(
         document_id=result.document_id,
         status="indexed",
