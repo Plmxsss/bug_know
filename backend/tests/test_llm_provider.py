@@ -4,7 +4,7 @@ import json
 
 import httpx
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.config import Settings
 from app.llm import (
@@ -19,6 +19,12 @@ class ExampleOutput(BaseModel):
 
     summary: str
     count: int
+
+
+class ConstrainedOutput(BaseModel):
+    """Schema with string limits that Ollama cannot compile as a grammar."""
+
+    answer: str = Field(min_length=1, max_length=100)
 
 
 def _settings(**overrides: object) -> Settings:
@@ -144,3 +150,38 @@ async def test_provider_rejects_schema_invalid_content() -> None:
 
     assert exc_info.value.code == "LLM_INVALID_RESPONSE"
     assert exc_info.value.retryable is False
+
+
+async def test_ollama_request_removes_unsupported_string_length_keywords() -> None:
+    """Provider adaptation must keep local structured generation usable."""
+
+    seen_payload: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen_payload.update(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={
+                "choices": [{"message": {"content": '{"answer":"ok"}'}}],
+            },
+        )
+
+    client = httpx.AsyncClient(
+        base_url="http://llm.test/v1/",
+        transport=httpx.MockTransport(handler),
+    )
+    provider = OpenAICompatibleProvider(_settings(), client=client)
+
+    result = await provider.generate_structured(
+        messages=(ChatMessage(role="user", content="Create a result."),),
+        response_model=ConstrainedOutput,
+    )
+    await provider.close()
+
+    response_format = seen_payload["response_format"]
+    assert isinstance(response_format, dict)
+    schema = response_format["json_schema"]["schema"]
+    answer_schema = schema["properties"]["answer"]
+    assert "minLength" not in answer_schema
+    assert "maxLength" not in answer_schema
+    assert result.value.answer == "ok"

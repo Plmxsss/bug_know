@@ -18,10 +18,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
 from app.api.deps import get_db_session
+from app.api.serializers import diagnosis_report_response
 from app.core.config import Settings
 from app.core.exceptions import AppError, ErrorResponse
+from app.llm import LLMProvider
 from app.ml.predictors.types import ImagePredictor
 from app.models import DetectionTask
+from app.rag.embeddings import TextEmbedder
+from app.rag.vector_database import VectorDatabaseGateway
 from app.repositories import DetectionObjectRepository, DetectionTaskRepository
 from app.schemas import (
     BoundingBoxResponse,
@@ -30,9 +34,10 @@ from app.schemas import (
     DetectionTaskDetailResponse,
     DetectionTaskListResponse,
     DetectionTaskResponse,
+    DiagnosisReportResponse,
     StoredDetectionResponse,
 )
-from app.services import DetectionRunService, ImageStorage
+from app.services import DetectionRunService, DiagnosisReportService, ImageStorage
 
 router = APIRouter(prefix="/detections", tags=["detections"])
 
@@ -208,3 +213,32 @@ async def get_detection_task(
             for detected_object in objects
         ],
     )
+
+
+@router.post(
+    "/{task_id}/diagnosis",
+    response_model=DiagnosisReportResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Generate or return one evidence-bound diagnosis report",
+)
+async def create_diagnosis_report(
+    request: Request,
+    task_id: Annotated[int, Path(ge=1)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> DiagnosisReportResponse:
+    """Combine persisted detections, reviewed RAG evidence, and the configured LLM."""
+
+    stored = await DiagnosisReportService(
+        session=session,
+        settings=cast(Settings, request.app.state.settings),
+        vector_database=cast(
+            VectorDatabaseGateway,
+            request.app.state.vector_database,
+        ),
+        embedder=cast(TextEmbedder | None, request.app.state.embedder),
+        llm_provider=cast(
+            LLMProvider | None,
+            request.app.state.llm_provider,
+        ),
+    ).generate(task_id)
+    return diagnosis_report_response(stored)

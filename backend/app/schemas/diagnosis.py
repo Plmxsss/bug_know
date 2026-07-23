@@ -1,8 +1,9 @@
 """Validated structures for evidence-bound pest diagnosis reports."""
 
-from typing import Annotated
+from datetime import datetime
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 NonBlankText = Annotated[
     str,
@@ -66,3 +67,28 @@ class DiagnosisReportContent(BaseModel):
     detected_entities: list[DiagnosedEntity]
     references: list[DiagnosisReference]
     disclaimer: str
+
+
+class DiagnosisUsage(BaseModel):
+    """Token counts returned by a local or cloud-compatible provider."""
+
+    prompt_tokens: int | None
+    completion_tokens: int | None
+    total_tokens: int | None
+
+
+class DiagnosisReportResponse(BaseModel):
+    """Public persisted report with no internal error or prompt text."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    task_id: int
+    status: Literal["completed"]
+    llm_provider: str
+    llm_model: str
+    prompt_version: str
+    report: DiagnosisReportContent
+    usage: DiagnosisUsage
+    created_at: datetime
+    completed_at: datetime

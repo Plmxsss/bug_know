@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     qdrant_collection: str = "agriguard_knowledge"
     rag_chunk_size: int = Field(default=800, ge=200, le=4000)
     rag_chunk_overlap: int = Field(default=120, ge=0, le=1000)
+    rag_top_k: int = Field(default=6, ge=1, le=20)
     embedding_enabled: bool = False
     embedding_model: str = "BAAI/bge-small-zh-v1.5"
     embedding_device: str = "cpu"

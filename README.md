@@ -10,7 +10,9 @@ validate and store an uploaded image, run the trained IP102 YOLO model on GPU,
 draw an annotated result, and persist the task and bounding boxes in MySQL.
 It can also upload, parse, chunk, locally embed, and index provenance-rich
 knowledge sources in MySQL and Qdrant. Retrieval, LLM integration, and the
-frontend remain in progress.
+evidence-bound diagnosis flow are now connected: reviewed retrieval results
+can be synthesized by local Qwen or a configured API model and persisted as a
+structured report. The Vue frontend remains in progress.
 
 ## Requirements
 
@@ -77,6 +79,7 @@ Open:
 - API and MySQL readiness check: <http://127.0.0.1:8000/api/v1/health/ready>
 - Detection task history: <http://127.0.0.1:8000/api/v1/detections>
 - Detection task example: <http://127.0.0.1:8000/api/v1/detections/1>
+- Diagnosis report example: <http://127.0.0.1:8000/api/v1/reports/7>
 - Generated annotation example: <http://127.0.0.1:8000/media/annotated/FILE.jpg>
 - Swagger UI: <http://127.0.0.1:8000/docs>
 - OpenAPI schema: <http://127.0.0.1:8000/openapi.json>
@@ -386,6 +389,38 @@ generation deliberately keeps responsibilities separate:
 
 This fixed, evidence-gated workflow is used for diagnosis instead of giving an
 autonomous agent unrestricted access to detection or database state.
+
+## Generate and read a diagnosis report
+
+Before diagnosis, the detection task must be `completed`, every detected class
+must have a verified entity mapping, and every linked entity must have reviewed
+knowledge. Enable both the embedding model and LLM in the private `.env`, start
+FastAPI, and call:
+
+```powershell
+Invoke-RestMethod `
+  -Method Post `
+  http://127.0.0.1:8000/api/v1/detections/7/diagnosis
+```
+
+The first successful request retrieves entity-filtered knowledge, asks the
+configured model for validated explanatory fields, rebuilds citations from
+trusted server metadata, and inserts one `diagnosis_reports` row. The unique
+task constraint and row locking prevent two concurrent requests from creating
+two reports. Repeating the same POST returns the stored completed report
+without calling Qdrant, the embedding model, or the LLM again.
+
+Read the persisted report later with:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/reports/7
+```
+
+The response includes the provider and model names, prompt version, token
+counts, structured content, references, and timestamps. Internal failure text
+and prompts are not exposed. The local verified end-to-end task generated one
+entity report with six citations drawn from two independent official source
+organizations.
 
 Open a MySQL command session as the application user:
 

@@ -3,6 +3,10 @@
 from app.services.annotation_renderer import AnnotatedImage, AnnotationRenderer
 from app.services.detection_run import DetectionRunResult, DetectionRunService
 from app.services.detection_task import DetectionTaskService
+from app.services.diagnosis_report import (
+    DiagnosisReportService,
+    StoredDiagnosisReport,
+)
 from app.services.document_index import DocumentIndexResult, DocumentIndexService
 from app.services.document_storage import DocumentStorage, StoredDocument
 from app.services.entity_normalizer import EntityNormalization, EntityNormalizer
@@ -30,6 +34,7 @@ __all__ = [
     "DetectionRunResult",
     "DetectionRunService",
     "DetectionTaskService",
+    "DiagnosisReportService",
     "DocumentStorage",
     "DocumentIndexResult",
     "DocumentIndexService",
@@ -49,4 +54,5 @@ __all__ = [
     "SeedSummary",
     "StoredImage",
     "StoredDocument",
+    "StoredDiagnosisReport",
 ]

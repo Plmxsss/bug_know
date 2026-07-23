@@ -1,5 +1,7 @@
 """Database operations for pest entities, aliases, and model mappings."""
 
+from collections.abc import Sequence
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,6 +31,16 @@ class PestEntityRepository:
             .with_for_update()
         )
         return result.scalar_one_or_none()
+
+    async def get_by_ids(self, entity_ids: Sequence[int]) -> list[PestEntity]:
+        """Return normalized entities used by one completed detection task."""
+
+        if not entity_ids:
+            return []
+        result = await self._session.execute(
+            select(PestEntity).where(PestEntity.id.in_(entity_ids))
+        )
+        return list(result.scalars().all())
 
     async def create_skeleton(
         self,

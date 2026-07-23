@@ -1,6 +1,7 @@
 """Structured chat through any OpenAI-compatible HTTP endpoint."""
 
 import asyncio
+import logging
 from typing import Any, Literal
 
 import httpx
@@ -16,6 +17,7 @@ from app.llm.types import (
 )
 
 _RETRYABLE_STATUS_CODES = {408, 429, 500, 502, 503, 504}
+logger = logging.getLogger(__name__)
 
 
 class OpenAICompatibleProvider:
@@ -101,13 +103,18 @@ class OpenAICompatibleProvider:
             for message in messages
         ]
         schema = response_model.model_json_schema()
+        provider_schema = (
+            self._ollama_compatible_schema(schema)
+            if self._provider == "ollama"
+            else schema
+        )
         if self._structured_mode == "prompt_only":
             request_messages.append(
                 {
                     "role": "system",
                     "content": (
                         "Return only JSON matching this schema: "
-                        f"{schema}"
+                        f"{provider_schema}"
                     ),
                 }
             )
@@ -121,7 +128,7 @@ class OpenAICompatibleProvider:
         response_format = self._response_format(
             mode=self._structured_mode,
             response_model=response_model,
-            schema=schema,
+            schema=provider_schema,
         )
         if response_format is not None:
             payload["response_format"] = response_format
@@ -151,6 +158,11 @@ class OpenAICompatibleProvider:
             except httpx.TransportError as exc:
                 last_error = exc
             except httpx.HTTPStatusError as exc:
+                logger.warning(
+                    "language_model_request_rejected status_code=%s response=%s",
+                    exc.response.status_code,
+                    exc.response.text[:1000],
+                )
                 raise LLMProviderError(
                     code="LLM_REQUEST_REJECTED",
                     message=(
@@ -198,3 +210,20 @@ class OpenAICompatibleProvider:
         if isinstance(value, int) and not isinstance(value, bool):
             return value
         return None
+
+    @classmethod
+    def _ollama_compatible_schema(cls, value: Any) -> Any:
+        """Remove string-length keywords unsupported by Ollama's grammar parser.
+
+        Pydantic still validates the model response against the original schema.
+        """
+
+        if isinstance(value, dict):
+            return {
+                key: cls._ollama_compatible_schema(item)
+                for key, item in value.items()
+                if key not in {"minLength", "maxLength"}
+            }
+        if isinstance(value, list):
+            return [cls._ollama_compatible_schema(item) for item in value]
+        return value

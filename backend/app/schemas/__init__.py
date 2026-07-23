@@ -13,6 +13,8 @@ from app.schemas.diagnosis import (
     DiagnosedEntity,
     DiagnosisReference,
     DiagnosisReportContent,
+    DiagnosisReportResponse,
+    DiagnosisUsage,
     EntityKnowledgeSynthesis,
 )
 from app.schemas.knowledge_document import (
@@ -36,6 +38,8 @@ __all__ = [
     "DiagnosedEntity",
     "DiagnosisReference",
     "DiagnosisReportContent",
+    "DiagnosisReportResponse",
+    "DiagnosisUsage",
     "EntityKnowledgeSynthesis",
     "KnowledgeDocumentResponse",
     "KnowledgeDocumentIndexResponse",
