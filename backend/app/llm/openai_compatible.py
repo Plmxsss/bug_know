@@ -37,11 +37,15 @@ class OpenAICompatibleProvider:
         self._max_tokens = settings.llm_max_tokens
         api_key = settings.llm_api_key.get_secret_value()
         headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
-        self._client = client or httpx.AsyncClient(
-            base_url=f"{settings.llm_base_url.rstrip('/')}/",
-            headers=headers,
-            timeout=httpx.Timeout(settings.llm_timeout_seconds),
-        )
+        if client is None:
+            self._client = httpx.AsyncClient(
+                base_url=f"{settings.llm_base_url.rstrip('/')}/",
+                headers=headers,
+                timeout=httpx.Timeout(settings.llm_timeout_seconds),
+            )
+        else:
+            self._client = client
+            self._client.headers.update(headers)
 
     async def generate_structured(
         self,

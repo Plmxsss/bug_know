@@ -185,3 +185,47 @@ async def test_ollama_request_removes_unsupported_string_length_keywords() -> No
     assert "minLength" not in answer_schema
     assert "maxLength" not in answer_schema
     assert result.value.answer == "ok"
+
+
+async def test_cloud_compatible_request_keeps_schema_and_uses_api_key() -> None:
+    """Cloud mode should authenticate and receive the unmodified schema."""
+
+    seen_request: httpx.Request | None = None
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal seen_request
+        seen_request = request
+        return httpx.Response(
+            200,
+            json={
+                "choices": [{"message": {"content": '{"answer":"ok"}'}}],
+            },
+        )
+
+    client = httpx.AsyncClient(
+        base_url="https://provider.test/v1/",
+        transport=httpx.MockTransport(handler),
+    )
+    provider = OpenAICompatibleProvider(
+        _settings(
+            llm_provider="openai-compatible",
+            llm_api_key="cloud-secret",
+        ),
+        client=client,
+    )
+
+    result = await provider.generate_structured(
+        messages=(ChatMessage(role="user", content="Create a result."),),
+        response_model=ConstrainedOutput,
+    )
+    await provider.close()
+
+    assert seen_request is not None
+    assert seen_request.headers["Authorization"] == "Bearer cloud-secret"
+    payload = json.loads(seen_request.content)
+    answer_schema = payload["response_format"]["json_schema"]["schema"][
+        "properties"
+    ]["answer"]
+    assert answer_schema["minLength"] == 1
+    assert answer_schema["maxLength"] == 100
+    assert result.provider == "openai-compatible"
