@@ -28,3 +28,32 @@ class DetectionTaskListResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class BoundingBoxResponse(BaseModel):
+    """One public rectangle in original-image pixel coordinates."""
+
+    x1: float
+    y1: float
+    x2: float
+    y2: float
+
+
+class DetectionResponse(BaseModel):
+    """One public predictor result without framework-specific objects."""
+
+    class_id: int
+    class_name: str
+    confidence: float
+    bbox: BoundingBoxResponse
+
+
+class DetectionCreateResponse(BaseModel):
+    """Immediate result returned after a single-image detection finishes."""
+
+    task_id: int
+    status: Literal["completed"]
+    detections: list[DetectionResponse]
+    annotated_image_url: str
+    inference_ms: float
+    device: str

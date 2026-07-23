@@ -54,3 +54,29 @@ async def test_get_by_name_and_version_returns_session_result() -> None:
 
     session.execute.assert_awaited_once()
     assert result is existing
+
+
+async def test_get_active_model_returns_session_result() -> None:
+    """Inference lookup should return only the configured active row."""
+
+    existing = ModelVersion(
+        name="ip102-yolo",
+        version="1.0.0",
+        weights_path="data/models/best.pt",
+        checksum_sha256="a" * 64,
+        class_count=102,
+        is_active=True,
+    )
+    session = AsyncMock(spec=AsyncSession)
+    query_result = Mock()
+    query_result.scalar_one_or_none.return_value = existing
+    session.execute.return_value = query_result
+    repository = ModelVersionRepository(session)
+
+    result = await repository.get_active_by_name_and_version(
+        name="ip102-yolo",
+        version="1.0.0",
+    )
+
+    session.execute.assert_awaited_once()
+    assert result is existing

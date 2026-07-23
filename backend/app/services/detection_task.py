@@ -1,13 +1,15 @@
 """Business rules for detection task status changes."""
 
+from collections.abc import Sequence
 from datetime import UTC, datetime
 
 from fastapi import status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppError
+from app.ml.predictors.types import Detection
 from app.models import DetectionTask
-from app.repositories import DetectionTaskRepository
+from app.repositories import DetectionObjectRepository, DetectionTaskRepository
 
 
 class DetectionTaskService:
@@ -16,6 +18,7 @@ class DetectionTaskService:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
         self._repository = DetectionTaskRepository(session)
+        self._object_repository = DetectionObjectRepository(session)
 
     async def start(self, task_id: int) -> DetectionTask:
         """Move one pending task to processing."""
@@ -31,12 +34,17 @@ class DetectionTaskService:
         task_id: int,
         *,
         annotated_image_path: str,
+        detections: Sequence[Detection] = (),
     ) -> DetectionTask:
-        """Complete one processing task and record its output image."""
+        """Atomically save detections and complete one processing task."""
 
         async with self._session.begin():
             task = await self._get_locked_task(task_id)
             self._require_status(task, allowed={"processing"}, target="completed")
+            await self._object_repository.create_many(
+                task_id=task_id,
+                detections=detections,
+            )
             task.status = "completed"
             task.annotated_image_path = annotated_image_path
             task.error_message = None

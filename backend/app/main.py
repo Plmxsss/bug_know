@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.api.router import api_router
 from app.core.config import PROJECT_ROOT, Settings, get_settings
@@ -55,6 +57,8 @@ def create_app(
         """Keep shared resources available until the application stops."""
 
         application.state.database = app_database
+        application.state.settings = app_settings
+        application.state.predictor_lock = asyncio.Lock()
         if not hasattr(application.state, "predictor"):
             application.state.predictor = (
                 (predictor_factory or load_yolo_predictor)(app_settings)
@@ -73,6 +77,17 @@ def create_app(
     application.middleware("http")(log_request)
     register_exception_handlers(application)
     application.include_router(api_router)
+    storage_root = app_settings.storage_dir
+    if not storage_root.is_absolute():
+        storage_root = PROJECT_ROOT / storage_root
+    application.mount(
+        "/media/annotated",
+        StaticFiles(
+            directory=storage_root / "uploads" / "annotated",
+            check_dir=False,
+        ),
+        name="annotated-images",
+    )
     return application
 
 

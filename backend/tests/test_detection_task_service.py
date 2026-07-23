@@ -6,6 +6,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppError
+from app.ml.predictors import BoundingBox, Detection
 from app.models import DetectionTask
 from app.services import DetectionTaskService
 
@@ -53,6 +54,32 @@ async def test_complete_records_output_and_completion_time() -> None:
     assert result.status == "completed"
     assert result.annotated_image_path == "uploads/annotated/result.jpg"
     assert result.completed_at is not None
+
+
+async def test_complete_saves_objects_in_the_same_operation() -> None:
+    """Completing a task should persist every predictor box before commit."""
+
+    service = _service_with_task(_task("processing"))
+    service._object_repository.create_many = AsyncMock(return_value=[])
+    detections = [
+        Detection(
+            class_id=2,
+            class_name="pest",
+            confidence=0.8,
+            bbox=BoundingBox(x1=1.0, y1=2.0, x2=20.0, y2=30.0),
+        )
+    ]
+
+    await service.complete(
+        1,
+        annotated_image_path="uploads/annotated/result.jpg",
+        detections=detections,
+    )
+
+    service._object_repository.create_many.assert_awaited_once_with(
+        task_id=1,
+        detections=detections,
+    )
 
 
 async def test_fail_requires_non_empty_message() -> None:

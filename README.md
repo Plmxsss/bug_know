@@ -5,10 +5,10 @@ question-answering project. The finished system will connect a trained IP102
 YOLO model, FastAPI, MySQL, Qdrant RAG, local or API-hosted language models,
 and a Vue 3 frontend.
 
-The repository is built in small, verifiable stages. The current stage contains
-the backend foundation, MySQL persistence, task-history APIs, and a GPU-verified
-YOLO predictor. Image upload, RAG, LLM integration, and the frontend remain in
-progress.
+The repository is built in small, verifiable stages. The current stage can
+validate and store an uploaded image, run the trained IP102 YOLO model on GPU,
+draw an annotated result, and persist the task and bounding boxes in MySQL.
+RAG, LLM integration, and the frontend remain in progress.
 
 ## Requirements
 
@@ -75,6 +75,7 @@ Open:
 - API and MySQL readiness check: <http://127.0.0.1:8000/api/v1/health/ready>
 - Detection task history: <http://127.0.0.1:8000/api/v1/detections>
 - Detection task example: <http://127.0.0.1:8000/api/v1/detections/1>
+- Generated annotation example: <http://127.0.0.1:8000/media/annotated/FILE.jpg>
 - Swagger UI: <http://127.0.0.1:8000/docs>
 - OpenAPI schema: <http://127.0.0.1:8000/openapi.json>
 
@@ -133,6 +134,24 @@ Expected response:
 This endpoint executes `SELECT 1`. It returns HTTP 503 when MySQL cannot be
 reached, while `/api/v1/health` continues to report whether FastAPI itself is
 running.
+
+## Run a real image detection
+
+Make sure MySQL is migrated, the model version is registered as active, and
+`AGRIGUARD_YOLO_ENABLED=true` is set in the private `.env`. Then either use the
+Swagger `POST /api/v1/detections` form or run this command from `backend`:
+
+```powershell
+curl.exe -X POST `
+  -F "image=@../data/image/IP000000000.jpg;type=image/jpeg" `
+  http://127.0.0.1:8000/api/v1/detections
+```
+
+The API accepts matching JPEG, PNG, or WebP content, creates a generated
+filename instead of trusting the upload name, limits both compressed bytes and
+decoded pixels, serializes GPU access inside one process, and returns a public
+annotation URL. A successful request also inserts one `detection_tasks` row and
+zero or more linked `detection_objects` rows.
 
 ## Apply database migrations
 

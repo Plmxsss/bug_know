@@ -27,6 +27,22 @@ class ModelVersionRepository:
         result = await self._session.execute(statement)
         return result.scalar_one_or_none()
 
+    async def get_active_by_name_and_version(
+        self,
+        *,
+        name: str,
+        version: str,
+    ) -> ModelVersion | None:
+        """Return the exact active model configured for inference."""
+
+        statement = select(ModelVersion).where(
+            ModelVersion.name == name,
+            ModelVersion.version == version,
+            ModelVersion.is_active.is_(True),
+        )
+        result = await self._session.execute(statement)
+        return result.scalar_one_or_none()
+
     async def create(
         self,
         *,

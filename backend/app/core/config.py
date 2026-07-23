@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Literal
 
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app import __version__
@@ -25,12 +25,15 @@ class Settings(BaseSettings):
     mysql_user: str = "agriguard"
     mysql_password: SecretStr = SecretStr("")
     yolo_enabled: bool = False
+    yolo_model_name: str = "ip102-yolo26n"
+    yolo_model_version: str = "1.0.0"
     yolo_weights_path: Path = Path(
         "data/runs/yolo26n_bug_know-5/weights/best.pt"
     )
     yolo_class_count: int = 102
     yolo_image_size: int = 640
     yolo_device: str = "0"
+    yolo_confidence: float = Field(default=0.25, gt=0.0, le=1.0)
     max_upload_bytes: int = 10 * 1024 * 1024
     max_image_pixels: int = 25_000_000
     storage_dir: Path = Path("storage")
