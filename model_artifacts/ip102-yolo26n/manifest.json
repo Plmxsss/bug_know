@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "model": {
+    "name": "ip102-yolo26n",
+    "version": "1.0.0",
+    "task": "object_detection",
+    "framework": "ultralytics",
+    "format": "pytorch_pt",
+    "weights_path": "data/runs/yolo26n_bug_know-5/weights/best.pt",
+    "weights_size_bytes": 5649029,
+    "weights_sha256": "643b969aadbad424c2d77f5e819c871488bad70e2836130c4a2a8a0beceeda32",
+    "class_count": 102,
+    "input_size": 640
+  },
+  "training": {
+    "dataset": "IP102",
+    "dataset_config": "data/data.yaml",
+    "epochs": 100,
+    "batch_size": 4,
+    "seed": 42,
+    "device": "cuda:0",
+    "optimizer": "auto",
+    "cosine_learning_rate": true,
+    "automatic_mixed_precision": true,
+    "resumed_training": true
+  },
+  "best_validation_metrics": {
+    "epoch": 86,
+    "precision": 0.59071,
+    "recall": 0.61496,
+    "map50": 0.62067,
+    "map50_95": 0.40732
+  },
+  "source_artifacts": {
+    "training_arguments": "data/runs/yolo26n_bug_know-5/args.yaml",
+    "epoch_metrics": "data/runs/yolo26n_bug_know-5/results.csv",
+    "per_class_metrics": "data/runs/yolo26n_bug_know-5/per_class_metrics.csv",
+    "precision_recall_curve": "data/runs/yolo26n_bug_know-5/BoxPR_curve.png",
+    "confusion_matrix": "data/runs/yolo26n_bug_know-5/confusion_matrix.png"
+  },
+  "validation_runtime": {
+    "ultralytics_version": "8.4.95",
+    "weight_load_succeeded": true,
+    "first_class_name": "稻纵卷叶螟",
+    "last_class_name": "叶蝉科"
+  },
+  "smoke_regression_images": [
+    {
+      "path": "data/image/IP000000000.jpg",
+      "size_bytes": 36025,
+      "sha256": "c119d90e5da5777dcce166a8c1d8a9433d4a304aa43790714bf2a8c601c85407"
+    },
+    {
+      "path": "data/image/IP000000002.jpg",
+      "size_bytes": 11958,
+      "sha256": "5fdf38b1c6aaa97fdb59ee094bc6f46a5e0c5d516e08ca02bf489e44c05add80"
+    },
+    {
+      "path": "data/image/IP000000003.jpg",
+      "size_bytes": 39700,
+      "sha256": "dcd92e2bb67d82d994d4631252d8c9ed39cbb0a92447deddf9ccb187d9bb9b73"
+    }
+  ]
+}

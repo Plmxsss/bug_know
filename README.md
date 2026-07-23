@@ -184,5 +184,15 @@ docker compose --env-file .env -f infra/compose.yaml down
 
 The previously trained IP102 dataset, scripts, weights, and experiment outputs
 remain under the local `data/` directory. That directory is ignored by Git to
-avoid committing large datasets and binary artifacts. A later stage will create
-a reproducible model manifest without modifying the original training outputs.
+avoid committing large datasets and binary artifacts. A reproducible manifest
+is committed under `model_artifacts/` without modifying the training outputs.
+
+Verify the local weight and fixed smoke images against the committed manifest:
+
+```powershell
+Set-Location backend
+python scripts/verify_model_artifact.py
+```
+
+See `model_artifacts/ip102-yolo26n/MODEL_CARD.md` for metrics, intended use,
+per-class weaknesses, and unresolved evaluation risks.
