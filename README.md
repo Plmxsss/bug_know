@@ -16,7 +16,8 @@ structured report. The Vue application now reads live service readiness and
 supports image selection, preview, multipart upload, and detection result
 display. Eligible results can request and display the persisted RAG/Qwen
 diagnosis with source links. A paginated history page reloads persisted MySQL
-tasks after a browser refresh; history detail remains in progress.
+tasks after a browser refresh. Each task detail reads stored boxes and an
+existing report without rerunning YOLO, retrieval, or Qwen.
 
 ## Requirements
 

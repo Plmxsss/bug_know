@@ -45,6 +45,19 @@ export interface DetectionTaskPage {
   page_size: number
 }
 
+export interface StoredDetection {
+  object_id: number
+  class_id: number
+  raw_class_name: string
+  normalized_entity_id: number | null
+  confidence: number
+  bbox: BoundingBox
+}
+
+export interface DetectionTaskDetail extends DetectionTask {
+  detections: StoredDetection[]
+}
+
 export async function uploadPestImage(file: File): Promise<DetectionResult> {
   const formData = new FormData()
   formData.append('image', file)
@@ -66,5 +79,14 @@ export async function fetchDetectionTasks(
       page_size: pageSize,
     },
   })
+  return response.data
+}
+
+export async function fetchDetectionTask(
+  taskId: number,
+): Promise<DetectionTaskDetail> {
+  const response = await apiClient.get<DetectionTaskDetail>(
+    `/detections/${taskId}`,
+  )
   return response.data
 }

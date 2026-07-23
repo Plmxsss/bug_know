@@ -29,3 +29,10 @@ export function apiErrorMessage(error: unknown): string {
 
   return error instanceof Error ? error.message : '发生未知错误。'
 }
+
+export function apiErrorCode(error: unknown): string | null {
+  if (axios.isAxiosError<ApiErrorResponse>(error)) {
+    return error.response?.data.error.code ?? null
+  }
+  return null
+}

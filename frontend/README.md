@@ -35,8 +35,10 @@ The current learning unit contains:
 - `src/components/DiagnosisReportPanel.vue`: gated RAG/Qwen report and sources.
 - `src/stores/diagnosis.ts`: active report generation state.
 - `src/views/HistoryView.vue`: MySQL-backed, refresh-safe paginated history.
+- `src/views/TaskDetailView.vue`: stored boxes and optional persisted report.
+- `src/components/DiagnosisReportContent.vue`: reusable report presentation.
 - `vite.config.ts`: Vue plugin and local reverse-proxy configuration.
 
 Vitest replaces the real detection and diagnosis APIs in store tests, so
-routine frontend tests do not load YOLO, Qdrant, or Qwen. A history-detail
-screen will be added in a later, independently verifiable unit.
+routine frontend tests do not load YOLO, Qdrant, or Qwen. The verified task
+detail can load its report while all three model services are disabled.

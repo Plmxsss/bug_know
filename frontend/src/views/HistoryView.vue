@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import {
   fetchDetectionTasks,
   type DetectionTask,
@@ -77,27 +78,31 @@ onMounted(() => loadPage(1))
 
     <ul v-else class="history-grid">
       <li v-for="task in tasks" :key="task.id" class="history-card">
-        <div class="history-image">
-          <img
-            v-if="task.annotated_image_url"
-            :src="task.annotated_image_url"
-            :alt="`任务 ${task.id} 的标注结果`"
-          />
-          <span v-else>暂无标注图</span>
-        </div>
-        <div class="history-card-body">
-          <div>
-            <strong>任务 #{{ task.id }}</strong>
-            <span class="task-status" :class="`task-${task.status}`">
-              {{ statusText(task.status) }}
-            </span>
+        <RouterLink :to="`/history/${task.id}`">
+          <div class="history-image">
+            <img
+              v-if="task.annotated_image_url"
+              :src="task.annotated_image_url"
+              :alt="`任务 ${task.id} 的标注结果`"
+            />
+            <span v-else>暂无标注图</span>
           </div>
-          <time :datetime="task.created_at">{{ formatTime(task.created_at) }}</time>
-          <small>模型版本 ID {{ task.model_version_id }}</small>
-          <p v-if="task.status === 'failed'">
-            任务执行失败，请查看后端日志了解详细原因。
-          </p>
-        </div>
+          <div class="history-card-body">
+            <div>
+              <strong>任务 #{{ task.id }}</strong>
+              <span class="task-status" :class="`task-${task.status}`">
+                {{ statusText(task.status) }}
+              </span>
+            </div>
+            <time :datetime="task.created_at">
+              {{ formatTime(task.created_at) }}
+            </time>
+            <small>模型版本 ID {{ task.model_version_id }}</small>
+            <p v-if="task.status === 'failed'">
+              任务执行失败，请查看后端日志了解详细原因。
+            </p>
+          </div>
+        </RouterLink>
       </li>
     </ul>
 
