@@ -42,6 +42,8 @@ class QueryPlanningAgent:
             clean_query = query.strip()
             if not clean_query:
                 return "The search query was empty."
+            if len(executed_queries) >= 3:
+                return "The maximum of three retrieval calls has been reached."
             executed_queries.append(clean_query)
             return await search(clean_query)
 

@@ -63,6 +63,7 @@ class Settings(BaseSettings):
     llm_max_retries: int = Field(default=2, ge=0, le=5)
     llm_temperature: float = Field(default=0.0, ge=0.0, le=2.0)
     llm_max_tokens: int = Field(default=2048, ge=128, le=16384)
+    agent_enabled: bool = False
 
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",

@@ -21,6 +21,11 @@ from app.schemas.knowledge_document import (
     KnowledgeDocumentIndexResponse,
     KnowledgeDocumentResponse,
 )
+from app.schemas.knowledge_question import (
+    KnowledgeQuestionRequest,
+    KnowledgeQuestionResponse,
+    KnowledgeQuestionSynthesis,
+)
 from app.schemas.knowledge_search import (
     KnowledgeSearchHitResponse,
     KnowledgeSearchRequest,
@@ -43,6 +48,9 @@ __all__ = [
     "EntityKnowledgeSynthesis",
     "KnowledgeDocumentResponse",
     "KnowledgeDocumentIndexResponse",
+    "KnowledgeQuestionRequest",
+    "KnowledgeQuestionResponse",
+    "KnowledgeQuestionSynthesis",
     "KnowledgeSearchHitResponse",
     "KnowledgeSearchRequest",
     "KnowledgeSearchResponse",

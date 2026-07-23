@@ -12,6 +12,10 @@ from app.services.document_storage import DocumentStorage, StoredDocument
 from app.services.entity_normalizer import EntityNormalization, EntityNormalizer
 from app.services.image_storage import ImageStorage, StoredImage
 from app.services.knowledge_document import KnowledgeDocumentService
+from app.services.knowledge_question import (
+    KnowledgeQuestionResult,
+    KnowledgeQuestionService,
+)
 from app.services.knowledge_review import (
     KnowledgeReviewResult,
     KnowledgeReviewService,
@@ -42,6 +46,8 @@ __all__ = [
     "EntityNormalizer",
     "ImageStorage",
     "KnowledgeDocumentService",
+    "KnowledgeQuestionResult",
+    "KnowledgeQuestionService",
     "KnowledgeSearchService",
     "KnowledgeReviewResult",
     "KnowledgeReviewService",

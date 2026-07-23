@@ -439,6 +439,31 @@ The project therefore demonstrates Agent tool use without trusting autonomous
 output for agricultural advice. Unit tests also reject an Agent run that tries
 to answer without calling the retrieval tool.
 
+Enable the optional task-scoped question endpoint together with the local
+embedding and LLM services:
+
+```dotenv
+AGRIGUARD_AGENT_ENABLED=true
+AGRIGUARD_EMBEDDING_ENABLED=true
+AGRIGUARD_LLM_ENABLED=true
+```
+
+Then call:
+
+```powershell
+Invoke-RestMethod `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"question":"稻纵卷叶螟的幼虫如何危害水稻叶片？"}' `
+  http://127.0.0.1:8000/api/v1/detections/7/questions
+```
+
+The task ID, not the user question, determines the allowed entity IDs. The
+Agent may make at most three calls to its only read-only retrieval tool. A
+second structured model call generates the public answer; its citations must
+be a subset of the exact points observed during those tool calls. The real
+local task-7 smoke test completed successfully with one official citation.
+
 ## Generate and read a diagnosis report
 
 Before diagnosis, the detection task must be `completed`, every detected class

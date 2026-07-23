@@ -30,6 +30,17 @@ _DOSAGE_PATTERN = re.compile(
 )
 
 
+def reject_universal_pesticide_dosage(text: str) -> None:
+    """Reject region-independent area dosage in any generated answer."""
+
+    if _DOSAGE_PATTERN.search(text):
+        raise LLMProviderError(
+            code="LLM_UNSAFE_DOSAGE",
+            message="The language model returned a universal pesticide dosage.",
+            retryable=False,
+        )
+
+
 @dataclass(frozen=True, slots=True)
 class DetectedEntityContext:
     """Trusted facts aggregated from persisted detection objects."""
@@ -221,12 +232,7 @@ class ReportGenerator:
                 retryable=False,
             )
         prose = synthesis.model_dump_json(exclude={"citation_point_ids"})
-        if _DOSAGE_PATTERN.search(prose):
-            raise LLMProviderError(
-                code="LLM_UNSAFE_DOSAGE",
-                message="The language model returned a universal pesticide dosage.",
-                retryable=False,
-            )
+        reject_universal_pesticide_dosage(prose)
 
     @staticmethod
     def _selected_hits(
