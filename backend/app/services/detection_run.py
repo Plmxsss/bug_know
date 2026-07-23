@@ -15,6 +15,7 @@ from app.models import DetectionTask
 from app.repositories import DetectionTaskRepository, ModelVersionRepository
 from app.services.annotation_renderer import AnnotatedImage, AnnotationRenderer
 from app.services.detection_task import DetectionTaskService
+from app.services.entity_normalizer import EntityNormalization, EntityNormalizer
 from app.services.image_storage import StoredImage
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,7 @@ class DetectionRunResult:
     task: DetectionTask
     prediction: PredictionResult
     annotated_image: AnnotatedImage
+    normalizations: dict[int, EntityNormalization]
 
 
 class DetectionRunService:
@@ -47,14 +49,17 @@ class DetectionRunService:
         self._task_repository = DetectionTaskRepository(session)
         self._model_repository = ModelVersionRepository(session)
         self._task_service = DetectionTaskService(session)
+        self._normalizer = EntityNormalizer(session)
         self._renderer = AnnotationRenderer(settings)
 
     async def run(self, image: StoredImage) -> DetectionRunResult:
         """Create, execute, and complete one detection task."""
 
         task = await self._create_pending_task(image.relative_path)
+        task_id = task.id
+        model_version_id = task.model_version_id
         try:
-            await self._task_service.start(task.id)
+            await self._task_service.start(task_id)
             async with self._predictor_lock:
                 prediction = await run_in_threadpool(
                     self._predictor.predict,
@@ -66,19 +71,32 @@ class DetectionRunService:
                 image=image,
                 detections=prediction.detections,
             )
+            async with self._session.begin():
+                normalizations = await self._normalizer.normalize_many(
+                    model_version_id=model_version_id,
+                    detections=prediction.detections,
+                )
+            verified_entity_ids = {
+                class_id: normalization.entity_id
+                for class_id, normalization in normalizations.items()
+                if normalization.status == "verified"
+                and normalization.entity_id is not None
+            }
             completed_task = await self._task_service.complete(
-                task.id,
+                task_id,
                 annotated_image_path=annotated.relative_path,
                 detections=prediction.detections,
+                normalized_entity_ids=verified_entity_ids,
             )
             return DetectionRunResult(
                 task=completed_task,
                 prediction=prediction,
                 annotated_image=annotated,
+                normalizations=normalizations,
             )
         except Exception as exc:
             await self._session.rollback()
-            await self._record_failure(task.id, exc)
+            await self._record_failure(task_id, exc)
             raise
 
     async def _create_pending_task(self, original_image_path: str) -> DetectionTask:

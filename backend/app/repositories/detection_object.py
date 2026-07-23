@@ -1,6 +1,6 @@
 """Database operations for detection_objects records."""
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,15 +20,17 @@ class DetectionObjectRepository:
         *,
         task_id: int,
         detections: Sequence[Detection],
+        normalized_entity_ids: Mapping[int, int] | None = None,
     ) -> list[DetectionObject]:
         """Convert predictor results to ORM rows and flush them together."""
 
+        entity_ids = normalized_entity_ids or {}
         objects = [
             DetectionObject(
                 task_id=task_id,
                 class_id=detection.class_id,
                 raw_class_name=detection.class_name,
-                normalized_entity_id=None,
+                normalized_entity_id=entity_ids.get(detection.class_id),
                 confidence=detection.confidence,
                 bbox_x1=detection.bbox.x1,
                 bbox_y1=detection.bbox.y1,

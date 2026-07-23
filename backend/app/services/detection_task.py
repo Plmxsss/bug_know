@@ -1,6 +1,6 @@
 """Business rules for detection task status changes."""
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 
 from fastapi import status
@@ -35,6 +35,7 @@ class DetectionTaskService:
         *,
         annotated_image_path: str,
         detections: Sequence[Detection] = (),
+        normalized_entity_ids: Mapping[int, int] | None = None,
     ) -> DetectionTask:
         """Atomically save detections and complete one processing task."""
 
@@ -44,6 +45,7 @@ class DetectionTaskService:
             await self._object_repository.create_many(
                 task_id=task_id,
                 detections=detections,
+                normalized_entity_ids=normalized_entity_ids,
             )
             task.status = "completed"
             task.annotated_image_path = annotated_image_path

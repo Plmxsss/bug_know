@@ -230,6 +230,12 @@ starts with `mapping_status=needs_review`; this intentionally prevents
 unreviewed labels from entering RAG. Re-running the command is idempotent and
 does not duplicate rows.
 
+Detection responses expose `normalization_status`. Only a `verified` mapping
+may populate `normalized_entity_id`; `unmapped` and `needs_review` results stay
+null. Entity identity and knowledge readiness are separate: even a verified
+identity with `knowledge_status=missing` must not be used to generate a RAG
+answer.
+
 Open a MySQL command session as the application user:
 
 ```powershell

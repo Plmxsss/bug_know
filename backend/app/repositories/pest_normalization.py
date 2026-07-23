@@ -107,6 +107,30 @@ class ModelClassMappingRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_with_entity(
+        self,
+        *,
+        model_version_id: int,
+        class_id: int,
+    ) -> tuple[ModelClassMapping, PestEntity | None] | None:
+        """Load one mapping and its optional normalized entity."""
+
+        statement = (
+            select(ModelClassMapping, PestEntity)
+            .outerjoin(
+                PestEntity,
+                ModelClassMapping.pest_entity_id == PestEntity.id,
+            )
+            .where(
+                ModelClassMapping.model_version_id == model_version_id,
+                ModelClassMapping.class_id == class_id,
+            )
+        )
+        row = (await self._session.execute(statement)).one_or_none()
+        if row is None:
+            return None
+        return row[0], row[1]
+
     async def create(
         self,
         *,

@@ -45,6 +45,11 @@ class DetectionResponse(BaseModel):
     class_name: str
     confidence: float
     bbox: BoundingBoxResponse
+    normalization_status: Literal["unmapped", "needs_review", "verified"]
+    normalized_entity_id: int | None
+    entity_code: str | None
+    common_name: str | None
+    knowledge_status: Literal["missing", "draft", "reviewed"] | None
 
 
 class DetectionCreateResponse(BaseModel):

@@ -15,7 +15,7 @@ from app.core.config import Settings
 from app.main import create_app
 from app.ml.predictors import BoundingBox, Detection, PredictionResult
 from app.models import DetectionObject, DetectionTask
-from app.services import AnnotatedImage, DetectionRunResult
+from app.services import AnnotatedImage, DetectionRunResult, EntityNormalization
 
 
 def _mock_session_with_task(task: DetectionTask | None) -> AsyncMock:
@@ -183,6 +183,17 @@ def test_create_detection_returns_completed_prediction(tmp_path) -> None:
             absolute_path=Path(tmp_path) / "result.png",
             relative_path="uploads/annotated/result.png",
         ),
+        normalizations={
+            3: EntityNormalization(
+                class_id=3,
+                raw_class_name="pest",
+                status="needs_review",
+                entity_id=None,
+                entity_code=None,
+                common_name=None,
+                knowledge_status=None,
+            )
+        },
     )
 
     with (
@@ -200,6 +211,10 @@ def test_create_detection_returns_completed_prediction(tmp_path) -> None:
     assert response.status_code == 201
     assert response.json()["task_id"] == 44
     assert response.json()["detections"][0]["class_id"] == 3
+    assert (
+        response.json()["detections"][0]["normalization_status"]
+        == "needs_review"
+    )
     assert response.json()["annotated_image_url"] == "/media/annotated/result.png"
 
 

@@ -79,6 +79,7 @@ async def test_complete_saves_objects_in_the_same_operation() -> None:
     service._object_repository.create_many.assert_awaited_once_with(
         task_id=1,
         detections=detections,
+        normalized_entity_ids=None,
     )
 
 

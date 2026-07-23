@@ -117,6 +117,17 @@ async def create_detection(
                     x2=detection.bbox.x2,
                     y2=detection.bbox.y2,
                 ),
+                normalization_status=result.normalizations[
+                    detection.class_id
+                ].status,
+                normalized_entity_id=result.normalizations[
+                    detection.class_id
+                ].entity_id,
+                entity_code=result.normalizations[detection.class_id].entity_code,
+                common_name=result.normalizations[detection.class_id].common_name,
+                knowledge_status=result.normalizations[
+                    detection.class_id
+                ].knowledge_status,
             )
             for detection in result.prediction.detections
         ],
