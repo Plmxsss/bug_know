@@ -6,6 +6,7 @@ from fastapi import APIRouter, Request, status
 from pydantic import BaseModel
 
 from app import __version__
+from app.cache import RedisGateway
 from app.core.exceptions import AppError
 from app.db.session import DatabaseGateway
 from app.rag.vector_database import VectorDatabaseGateway
@@ -25,6 +26,7 @@ class ReadinessResponse(BaseModel):
     status: Literal["ready"]
     database: Literal["ok"]
     vector_database: Literal["ok"]
+    redis: Literal["ok"]
 
 
 router = APIRouter(tags=["system"])
@@ -75,8 +77,19 @@ async def readiness_check(request: Request) -> ReadinessResponse:
             message="The vector database is currently unavailable.",
         ) from exc
 
+    redis: RedisGateway = request.app.state.redis
+    try:
+        await redis.ping()
+    except Exception as exc:
+        raise AppError(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="REDIS_UNAVAILABLE",
+            message="Redis is currently unavailable.",
+        ) from exc
+
     return ReadinessResponse(
         status="ready",
         database="ok",
         vector_database="ok",
+        redis="ok",
     )

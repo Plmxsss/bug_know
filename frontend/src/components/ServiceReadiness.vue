@@ -64,6 +64,12 @@ onMounted(checkServices)
           {{ readiness?.vector_database === 'ok' ? '已连接' : '等待连接' }}
         </dd>
       </div>
+      <div>
+        <dt>Redis</dt>
+        <dd :class="{ healthy: readiness?.redis === 'ok' }">
+          {{ readiness?.redis === 'ok' ? '已连接' : '等待连接' }}
+        </dd>
+      </div>
     </dl>
 
     <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>

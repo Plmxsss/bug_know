@@ -141,17 +141,20 @@ Copy the example configuration once, then replace its example passwords:
 Copy-Item .env.example .env
 ```
 
-Start MySQL and Qdrant from the repository root:
+Start MySQL, Qdrant, and Redis from the repository root:
 
 ```powershell
-docker compose --env-file .env -f infra/compose.yaml up -d mysql qdrant
+docker compose --env-file .env -f infra/compose.yaml up -d mysql qdrant redis
 docker compose --env-file .env -f infra/compose.yaml ps
 ```
 
 The Compose port mapping makes the MySQL process inside the container available
 to FastAPI at `127.0.0.1:3306` and Qdrant's HTTP API at
-`127.0.0.1:6333`. Qdrant data uses a named Docker volume rather than a Windows
-bind mount. After starting the containers and FastAPI, verify both connections:
+`127.0.0.1:6333`. Redis is exposed at `127.0.0.1:7379`; this avoids a Windows
+reserved range on the verified workstation while the container still listens
+on its standard port 6379. Qdrant and Redis data use named Docker volumes rather
+than Windows bind mounts. After starting the containers and FastAPI, verify all
+connections:
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:8000/api/v1/health/ready
@@ -163,14 +166,16 @@ Expected response:
 {
   "status": "ready",
   "database": "ok",
-  "vector_database": "ok"
+  "vector_database": "ok",
+  "redis": "ok"
 }
 ```
 
 This endpoint executes `SELECT 1` in MySQL and requests Qdrant collection
-metadata. It returns HTTP 503 with a service-specific error code when either
-dependency cannot be reached, while `/api/v1/health` continues to report
-whether FastAPI itself is running.
+metadata, and sends Redis `PING`. It returns HTTP 503 with a service-specific
+error code when a dependency cannot be reached, while `/api/v1/health`
+continues to report whether FastAPI itself is running. The shared async Redis
+client is created once in FastAPI lifespan and closed at shutdown.
 
 ## Run a real image detection
 

@@ -28,7 +28,7 @@ The current learning unit contains:
 - `src/main.ts`: creates and mounts the Vue application.
 - `src/App.vue`: shared page shell and navigation.
 - `src/router/index.ts`: maps `/` and `/detect` to page components.
-- `src/components/ServiceReadiness.vue`: reactive service-status component.
+- `src/components/ServiceReadiness.vue`: FastAPI/MySQL/Qdrant/Redis status.
 - `src/api/`: typed health and multipart detection requests.
 - `src/stores/detection.ts`: Pinia state for the active detection.
 - `src/views/DetectionView.vue`: image selection, preview, upload, and results.

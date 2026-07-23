@@ -2,6 +2,7 @@ export interface ReadinessResponse {
   status: 'ready'
   database: 'ok'
   vector_database: 'ok'
+  redis: 'ok'
 }
 
 export async function fetchReadiness(): Promise<ReadinessResponse> {

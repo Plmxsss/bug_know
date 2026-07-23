@@ -42,6 +42,29 @@ services:
       retries: 20
       start_period: 10s
 
+  redis:
+    image: redis:8.4.4-alpine
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${AGRIGUARD_REDIS_PASSWORD:?Set AGRIGUARD_REDIS_PASSWORD in .env}
+    command:
+      - sh
+      - -c
+      - exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"
+    ports:
+      - "${AGRIGUARD_REDIS_PORT:-7379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep PONG
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
 volumes:
   mysql_data:
   qdrant_data:
+  redis_data:

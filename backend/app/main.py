@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.api.router import api_router
+from app.cache import RedisClient, RedisGateway
 from app.core.config import PROJECT_ROOT, Settings, get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
@@ -55,6 +56,7 @@ def create_app(
     settings: Settings | None = None,
     database: DatabaseGateway | None = None,
     vector_database: VectorDatabaseGateway | None = None,
+    redis_gateway: RedisGateway | None = None,
     llm_provider: LLMProvider | None = None,
     predictor_factory: PredictorFactory | None = None,
     embedder_factory: EmbedderFactory | None = None,
@@ -64,6 +66,7 @@ def create_app(
     app_settings = settings or get_settings()
     app_database = database or Database(app_settings)
     app_vector_database = vector_database or QdrantVectorDatabase(app_settings)
+    app_redis = redis_gateway or RedisClient(app_settings)
     configure_logging(app_settings.log_level)
 
     @asynccontextmanager
@@ -72,6 +75,7 @@ def create_app(
 
         application.state.database = app_database
         application.state.vector_database = app_vector_database
+        application.state.redis = app_redis
         application.state.settings = app_settings
         application.state.predictor_lock = asyncio.Lock()
         if not hasattr(application.state, "predictor"):
@@ -101,9 +105,12 @@ def create_app(
                 await application.state.llm_provider.close()
         finally:
             try:
-                await app_vector_database.close()
+                await app_redis.close()
             finally:
-                await app_database.close()
+                try:
+                    await app_vector_database.close()
+                finally:
+                    await app_database.close()
 
     application = FastAPI(
         title=app_settings.app_name,

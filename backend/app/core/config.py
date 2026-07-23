@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     mysql_database: str = "agriguard"
     mysql_user: str = "agriguard"
     mysql_password: SecretStr = SecretStr("")
+    redis_host: str = "127.0.0.1"
+    redis_port: int = 7379
+    redis_database: int = Field(default=0, ge=0)
+    redis_password: SecretStr = SecretStr("")
+    redis_max_connections: int = Field(default=20, ge=1, le=1000)
     yolo_enabled: bool = False
     yolo_model_name: str = "ip102-yolo26n"
     yolo_model_version: str = "1.0.0"
