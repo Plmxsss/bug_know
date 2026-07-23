@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     storage_dir: Path = Path("storage")
     qdrant_url: str = "http://127.0.0.1:6333"
     qdrant_collection: str = "agriguard_knowledge"
+    rag_chunk_size: int = Field(default=800, ge=200, le=4000)
+    rag_chunk_overlap: int = Field(default=120, ge=0, le=1000)
 
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",
