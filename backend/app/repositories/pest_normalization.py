@@ -131,6 +131,31 @@ class ModelClassMappingRepository:
             return None
         return row[0], row[1]
 
+    async def get_with_entity_for_update(
+        self,
+        *,
+        model_version_id: int,
+        class_id: int,
+    ) -> tuple[ModelClassMapping, PestEntity | None] | None:
+        """Lock one model-scoped mapping while recording a review decision."""
+
+        statement = (
+            select(ModelClassMapping, PestEntity)
+            .outerjoin(
+                PestEntity,
+                ModelClassMapping.pest_entity_id == PestEntity.id,
+            )
+            .where(
+                ModelClassMapping.model_version_id == model_version_id,
+                ModelClassMapping.class_id == class_id,
+            )
+            .with_for_update()
+        )
+        row = (await self._session.execute(statement)).one_or_none()
+        if row is None:
+            return None
+        return row[0], row[1]
+
     async def create(
         self,
         *,
@@ -147,6 +172,9 @@ class ModelClassMappingRepository:
             raw_class_name=raw_class_name,
             pest_entity_id=pest_entity_id,
             mapping_status="needs_review",
+            verified_at=None,
+            verified_by=None,
+            review_note=None,
         )
         self._session.add(mapping)
         await self._session.flush()

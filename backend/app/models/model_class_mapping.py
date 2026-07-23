@@ -1,5 +1,7 @@
 """ORM model connecting one model class ID to a normalized pest entity."""
 
+from datetime import datetime
+
 from sqlalchemy import (
     BigInteger,
     CheckConstraint,
@@ -7,6 +9,7 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    Text,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -59,3 +62,6 @@ class ModelClassMapping(Base):
         default="unmapped",
         server_default="unmapped",
     )
+    verified_at: Mapped[datetime | None] = mapped_column()
+    verified_by: Mapped[str | None] = mapped_column(String(100))
+    review_note: Mapped[str | None] = mapped_column(Text)

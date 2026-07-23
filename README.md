@@ -241,6 +241,23 @@ null. Entity identity and knowledge readiness are separate: even a verified
 identity with `knowledge_status=missing` must not be used to generate a RAG
 answer.
 
+Verify mappings one model version and class at a time after checking the
+training catalog and normalized entity:
+
+```powershell
+python scripts/review_pest_mapping.py `
+  --class-id 0 `
+  --expected-label 稻纵卷叶螟 `
+  --expected-entity-code ip102-class-000 `
+  --reviewed-by project-maintainer `
+  --note "Matched the training catalog and curated entity record."
+```
+
+The command fails without changing the row if either expected value is wrong.
+A successful review records UTC time, reviewer label, and note. It verifies
+only the model-to-entity identity; it does not promote indexed knowledge from
+`draft` to `reviewed`.
+
 Upload a provenance-rich PDF, UTF-8 text file, or Markdown source through
 Swagger at `POST /api/v1/documents`. Required form fields are `file`, `title`,
 `source_organization`, and one or more `entity_ids`; URL, publication date, and

@@ -9,6 +9,10 @@ from app.services.entity_normalizer import EntityNormalization, EntityNormalizer
 from app.services.image_storage import ImageStorage, StoredImage
 from app.services.knowledge_document import KnowledgeDocumentService
 from app.services.knowledge_search import KnowledgeSearchService
+from app.services.pest_mapping_review import (
+    MappingReviewResult,
+    PestMappingReviewService,
+)
 from app.services.pest_mapping_seed import PestMappingSeedService, SeedSummary
 
 __all__ = [
@@ -25,6 +29,8 @@ __all__ = [
     "ImageStorage",
     "KnowledgeDocumentService",
     "KnowledgeSearchService",
+    "MappingReviewResult",
+    "PestMappingReviewService",
     "PestMappingSeedService",
     "SeedSummary",
     "StoredImage",
