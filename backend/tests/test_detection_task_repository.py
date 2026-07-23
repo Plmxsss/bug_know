@@ -48,3 +48,31 @@ async def test_get_by_id_returns_session_result() -> None:
 
     session.execute.assert_awaited_once()
     assert result is existing
+
+
+async def test_list_page_returns_rows_and_total() -> None:
+    """Pagination should return selected tasks and a separate total count."""
+
+    existing = DetectionTask(
+        model_version_id=1,
+        original_image_path="data/image/IP000000000.jpg",
+        annotated_image_path=None,
+        status="pending",
+        error_message=None,
+        completed_at=None,
+    )
+    scalar_rows = Mock()
+    scalar_rows.all.return_value = [existing]
+    query_result = Mock()
+    query_result.scalars.return_value = scalar_rows
+    session = AsyncMock(spec=AsyncSession)
+    session.scalar.return_value = 1
+    session.execute.return_value = query_result
+    repository = DetectionTaskRepository(session)
+
+    tasks, total = await repository.list_page(offset=0, limit=20)
+
+    session.scalar.assert_awaited_once()
+    session.execute.assert_awaited_once()
+    assert tasks == [existing]
+    assert total == 1

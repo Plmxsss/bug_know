@@ -2,15 +2,41 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path, status
+from fastapi import APIRouter, Depends, Path, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db_session
 from app.core.exceptions import AppError, ErrorResponse
 from app.repositories import DetectionTaskRepository
-from app.schemas import DetectionTaskResponse
+from app.schemas import DetectionTaskListResponse, DetectionTaskResponse
 
 router = APIRouter(prefix="/detections", tags=["detections"])
+
+
+@router.get(
+    "",
+    response_model=DetectionTaskListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="List detection task history",
+)
+async def list_detection_tasks(
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> DetectionTaskListResponse:
+    """Return one newest-first page without exposing ORM objects."""
+
+    repository = DetectionTaskRepository(session)
+    tasks, total = await repository.list_page(
+        offset=(page - 1) * page_size,
+        limit=page_size,
+    )
+    return DetectionTaskListResponse(
+        items=[DetectionTaskResponse.model_validate(task) for task in tasks],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
 
 
 @router.get(

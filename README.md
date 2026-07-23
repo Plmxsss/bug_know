@@ -41,6 +41,7 @@ Open:
 
 - API health check: <http://127.0.0.1:8000/api/v1/health>
 - API and MySQL readiness check: <http://127.0.0.1:8000/api/v1/health/ready>
+- Detection task history: <http://127.0.0.1:8000/api/v1/detections>
 - Detection task example: <http://127.0.0.1:8000/api/v1/detections/1>
 - Swagger UI: <http://127.0.0.1:8000/docs>
 - OpenAPI schema: <http://127.0.0.1:8000/openapi.json>

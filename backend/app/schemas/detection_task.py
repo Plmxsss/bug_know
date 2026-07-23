@@ -19,3 +19,12 @@ class DetectionTaskResponse(BaseModel):
     error_message: str | None
     created_at: datetime
     completed_at: datetime | None
+
+
+class DetectionTaskListResponse(BaseModel):
+    """One page of detection task history and its pagination metadata."""
+
+    items: list[DetectionTaskResponse]
+    total: int
+    page: int
+    page_size: int

@@ -2,7 +2,7 @@
 
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -66,3 +66,43 @@ def test_get_missing_detection_task_returns_standard_404() -> None:
 
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "DETECTION_TASK_NOT_FOUND"
+
+
+def test_list_detection_tasks_returns_pagination_metadata() -> None:
+    """The history endpoint should expose rows, total, page, and page size."""
+
+    task = DetectionTask(
+        id=1,
+        model_version_id=1,
+        original_image_path="data/image/IP000000000.jpg",
+        annotated_image_path=None,
+        status="pending",
+        error_message=None,
+        created_at=datetime(2026, 7, 23, 12, 0, tzinfo=UTC),
+        completed_at=None,
+    )
+    session = AsyncMock(spec=AsyncSession)
+    application = create_app()
+
+    async def override_session() -> AsyncIterator[AsyncSession]:
+        yield session
+
+    application.dependency_overrides[get_db_session] = override_session
+
+    with (
+        TestClient(application) as client,
+        patch(
+            "app.api.routes.detections.DetectionTaskRepository.list_page",
+            new=AsyncMock(return_value=([task], 1)),
+        ),
+    ):
+        response = client.get(
+            "/api/v1/detections",
+            params={"page": 1, "page_size": 10},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["total"] == 1
+    assert response.json()["page"] == 1
+    assert response.json()["page_size"] == 10
+    assert response.json()["items"][0]["id"] == 1

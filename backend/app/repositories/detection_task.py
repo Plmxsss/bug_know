@@ -1,6 +1,6 @@
 """Database operations for detection_tasks records."""
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import DetectionTask
@@ -18,6 +18,27 @@ class DetectionTaskRepository:
         statement = select(DetectionTask).where(DetectionTask.id == task_id)
         result = await self._session.execute(statement)
         return result.scalar_one_or_none()
+
+    async def list_page(
+        self,
+        *,
+        offset: int,
+        limit: int,
+    ) -> tuple[list[DetectionTask], int]:
+        """Return one newest-first task page and the total row count."""
+
+        count_statement = select(func.count()).select_from(DetectionTask)
+        total = await self._session.scalar(count_statement)
+
+        page_statement = (
+            select(DetectionTask)
+            .order_by(DetectionTask.created_at.desc(), DetectionTask.id.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        result = await self._session.execute(page_statement)
+        tasks = list(result.scalars().all())
+        return tasks, int(total or 0)
 
     async def create(
         self,
