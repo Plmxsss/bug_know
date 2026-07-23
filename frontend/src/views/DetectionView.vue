@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref } from 'vue'
+import DiagnosisReportPanel from '../components/DiagnosisReportPanel.vue'
+import { useDiagnosisStore } from '../stores/diagnosis'
 import { useDetectionStore } from '../stores/detection'
 
 const acceptedTypes = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const maxBytes = 10 * 1024 * 1024
 
 const detectionStore = useDetectionStore()
+const diagnosisStore = useDiagnosisStore()
 const selectedFile = ref<File | null>(null)
 const previewUrl = ref('')
 const selectionError = ref('')
@@ -21,6 +24,7 @@ function clearPreview(): void {
 function selectFile(file: File | undefined): void {
   selectionError.value = ''
   detectionStore.reset()
+  diagnosisStore.reset()
   clearPreview()
 
   if (!file) {
@@ -160,5 +164,11 @@ onBeforeUnmount(clearPreview)
         </template>
       </div>
     </div>
+
+    <DiagnosisReportPanel
+      v-if="detectionStore.result"
+      :task-id="detectionStore.result.task_id"
+      :detections="detectionStore.result.detections"
+    />
   </section>
 </template>

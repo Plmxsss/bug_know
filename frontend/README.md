@@ -32,8 +32,10 @@ The current learning unit contains:
 - `src/api/`: typed health and multipart detection requests.
 - `src/stores/detection.ts`: Pinia state for the active detection.
 - `src/views/DetectionView.vue`: image selection, preview, upload, and results.
+- `src/components/DiagnosisReportPanel.vue`: gated RAG/Qwen report and sources.
+- `src/stores/diagnosis.ts`: active report generation state.
 - `vite.config.ts`: Vue plugin and local reverse-proxy configuration.
 
-Vitest replaces the real detection API in store tests, so routine frontend
-tests do not load YOLO or require a GPU. Diagnosis reports and history will be
-added in later, independently verifiable units.
+Vitest replaces the real detection and diagnosis APIs in store tests, so
+routine frontend tests do not load YOLO, Qdrant, or Qwen. Detection history
+will be added in a later, independently verifiable unit.
