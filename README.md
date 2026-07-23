@@ -218,6 +218,18 @@ python scripts/update_detection_task_status.py `
 The service permits `pending -> processing -> completed` and failure from
 `pending` or `processing`. Invalid transitions return a business error.
 
+Seed the 102 labels from the exact training dataset configuration:
+
+```powershell
+python scripts/seed_pest_mappings.py
+```
+
+The first run creates entity skeletons, Chinese aliases, and model-class
+mappings. Every entity starts with `knowledge_status=missing`, and every mapping
+starts with `mapping_status=needs_review`; this intentionally prevents
+unreviewed labels from entering RAG. Re-running the command is idempotent and
+does not duplicate rows.
+
 Open a MySQL command session as the application user:
 
 ```powershell
