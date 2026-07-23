@@ -1,6 +1,8 @@
 """Stable prediction types independent of a model framework."""
 
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Protocol
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,3 +34,17 @@ class PredictionResult:
     detections: tuple[Detection, ...]
     elapsed_ms: float
     device: str
+
+
+class ImagePredictor(Protocol):
+    """Prediction behavior required by application services."""
+
+    def predict(
+        self,
+        image_path: Path,
+        *,
+        confidence: float = 0.25,
+    ) -> PredictionResult:
+        """Run one image prediction."""
+
+        ...

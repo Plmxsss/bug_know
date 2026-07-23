@@ -6,9 +6,9 @@ YOLO model, FastAPI, MySQL, Qdrant RAG, local or API-hosted language models,
 and a Vue 3 frontend.
 
 The repository is built in small, verifiable stages. The current stage contains
-the backend foundation, health checks, and an asynchronous MySQL connection.
-Database tables, YOLO inference, RAG, LLM integration, and the frontend are
-intentionally deferred.
+the backend foundation, MySQL persistence, task-history APIs, and a GPU-verified
+YOLO predictor. Image upload, RAG, LLM integration, and the frontend remain in
+progress.
 
 ## Requirements
 
@@ -47,6 +47,16 @@ Verify that the result prints `True`:
 ```powershell
 python -c "import torch; print(torch.cuda.is_available())"
 ```
+
+Enable lifespan model loading in the private root `.env` only after the ML
+dependencies and local weight are available:
+
+```dotenv
+AGRIGUARD_YOLO_ENABLED=true
+AGRIGUARD_YOLO_DEVICE=0
+```
+
+When disabled, API and database development can run without importing PyTorch.
 
 Keep an older training environment separate instead of upgrading its Python in
 place. Binary packages such as PyTorch and OpenCV are tied to a Python version;

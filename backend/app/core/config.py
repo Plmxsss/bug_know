@@ -24,6 +24,13 @@ class Settings(BaseSettings):
     mysql_database: str = "agriguard"
     mysql_user: str = "agriguard"
     mysql_password: SecretStr = SecretStr("")
+    yolo_enabled: bool = False
+    yolo_weights_path: Path = Path(
+        "data/runs/yolo26n_bug_know-5/weights/best.pt"
+    )
+    yolo_class_count: int = 102
+    yolo_image_size: int = 640
+    yolo_device: str = "0"
 
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",

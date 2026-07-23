@@ -16,6 +16,8 @@ def test_settings_use_safe_defaults() -> None:
     assert settings.log_level == "INFO"
     assert settings.mysql_host == "127.0.0.1"
     assert settings.mysql_password.get_secret_value() == ""
+    assert settings.yolo_enabled is False
+    assert settings.yolo_class_count == 102
 
 
 def test_environment_variable_overrides_default(monkeypatch) -> None:

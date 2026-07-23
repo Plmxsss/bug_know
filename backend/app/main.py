@@ -2,22 +2,47 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+import os
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
 from app.api.router import api_router
-from app.core.config import Settings, get_settings
+from app.core.config import PROJECT_ROOT, Settings, get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
 from app.core.request_logging import log_request
 from app.db.session import Database, DatabaseGateway
+from app.ml.predictors.types import ImagePredictor
+
+PredictorFactory = Callable[[Settings], ImagePredictor]
+
+
+def load_yolo_predictor(settings: Settings) -> ImagePredictor:
+    """Import and load YOLO only when the deployment enables ML inference."""
+
+    os.environ.setdefault(
+        "MPLCONFIGDIR",
+        str(PROJECT_ROOT / ".cache" / "matplotlib"),
+    )
+    from app.ml.predictors.yolo import YoloPredictor
+
+    weights_path = settings.yolo_weights_path
+    if not weights_path.is_absolute():
+        weights_path = PROJECT_ROOT / weights_path
+    return YoloPredictor(
+        weights_path=weights_path,
+        class_count=settings.yolo_class_count,
+        image_size=settings.yolo_image_size,
+        device=settings.yolo_device,
+    )
 
 
 def create_app(
     settings: Settings | None = None,
     database: DatabaseGateway | None = None,
+    predictor_factory: PredictorFactory | None = None,
 ) -> FastAPI:
     """Create and configure the FastAPI application."""
 
@@ -30,6 +55,12 @@ def create_app(
         """Keep shared resources available until the application stops."""
 
         application.state.database = app_database
+        if not hasattr(application.state, "predictor"):
+            application.state.predictor = (
+                (predictor_factory or load_yolo_predictor)(app_settings)
+                if app_settings.yolo_enabled
+                else None
+            )
         yield
         await app_database.close()
 
