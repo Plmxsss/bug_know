@@ -100,6 +100,27 @@ This endpoint executes `SELECT 1`. It returns HTTP 503 when MySQL cannot be
 reached, while `/api/v1/health` continues to report whether FastAPI itself is
 running.
 
+## Apply database migrations
+
+Run Alembic commands from the `backend` directory with MySQL running:
+
+```powershell
+Set-Location backend
+alembic upgrade head
+alembic current
+```
+
+`upgrade head` applies every migration through the newest revision. To undo
+only the latest revision and then restore it:
+
+```powershell
+alembic downgrade -1
+alembic upgrade head
+```
+
+Alembic reads the same private root `.env` file as the API. Database passwords
+are not stored in `alembic.ini` or migration files.
+
 Open a MySQL command session as the application user:
 
 ```powershell

@@ -8,7 +8,9 @@ version = "0.1.0"
 description = "Backend API for the AgriGuard AI learning project"
 requires-python = ">=3.11,<3.14"
 dependencies = [
+    "alembic>=1.14,<2.0",
     "asyncmy>=0.2.10,<1.0",
+    "cryptography>=44,<48",
     "fastapi>=0.115,<1.0",
     "pydantic>=2.10,<3.0",
     "pydantic-settings>=2.7,<3.0",
