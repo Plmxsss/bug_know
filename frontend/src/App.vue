@@ -16,6 +16,7 @@ import { RouterLink, RouterView } from 'vue-router'
       <nav class="site-nav" aria-label="主要导航">
         <RouterLink to="/">首页</RouterLink>
         <RouterLink to="/detect">害虫识别</RouterLink>
+        <RouterLink to="/history">历史记录</RouterLink>
       </nav>
     </header>
 

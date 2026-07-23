@@ -15,7 +15,8 @@ can be synthesized by local Qwen or a configured API model and persisted as a
 structured report. The Vue application now reads live service readiness and
 supports image selection, preview, multipart upload, and detection result
 display. Eligible results can request and display the persisted RAG/Qwen
-diagnosis with source links. The history screen remains in progress.
+diagnosis with source links. A paginated history page reloads persisted MySQL
+tasks after a browser refresh; history detail remains in progress.
 
 ## Requirements
 

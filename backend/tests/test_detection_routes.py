@@ -142,6 +142,42 @@ def test_list_detection_tasks_returns_pagination_metadata() -> None:
     assert "original_image_path" not in response.json()["items"][0]
 
 
+def test_list_detection_tasks_hides_internal_failure_details() -> None:
+    """Public history must not expose exception types or implementation text."""
+
+    task = DetectionTask(
+        id=5,
+        model_version_id=1,
+        original_image_path="uploads/original/private.jpg",
+        annotated_image_path=None,
+        status="failed",
+        error_message="RuntimeError: CUDA secret internal diagnostic",
+        created_at=datetime(2026, 7, 23, 12, 0, tzinfo=UTC),
+        completed_at=datetime(2026, 7, 23, 12, 1, tzinfo=UTC),
+    )
+    session = AsyncMock(spec=AsyncSession)
+    application = create_app()
+
+    async def override_session() -> AsyncIterator[AsyncSession]:
+        yield session
+
+    application.dependency_overrides[get_db_session] = override_session
+
+    with (
+        TestClient(application) as client,
+        patch(
+            "app.api.routes.detections.DetectionTaskRepository.list_page",
+            new=AsyncMock(return_value=([task], 1)),
+        ),
+    ):
+        response = client.get("/api/v1/detections")
+
+    assert response.status_code == 200
+    public_error = response.json()["items"][0]["error_message"]
+    assert public_error == "Detection failed. Check server logs with the task ID."
+    assert "CUDA" not in public_error
+
+
 def test_create_detection_returns_completed_prediction(tmp_path) -> None:
     """A valid upload should expose public detection data and an image URL."""
 

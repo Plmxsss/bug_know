@@ -61,7 +61,11 @@ def _task_response(task: DetectionTask) -> DetectionTaskResponse:
             Literal["pending", "processing", "completed", "failed"],
             task.status,
         ),
-        error_message=task.error_message,
+        error_message=(
+            "Detection failed. Check server logs with the task ID."
+            if task.status == "failed"
+            else None
+        ),
         created_at=task.created_at,
         completed_at=task.completed_at,
     )
