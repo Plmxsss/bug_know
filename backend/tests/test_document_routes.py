@@ -66,3 +66,25 @@ def test_upload_markdown_returns_registered_provenance(tmp_path: Path) -> None:
     assert response.json()["id"] == 3
     assert response.json()["entity_ids"] == [1]
     assert "file_path" not in response.json()
+
+
+def test_index_document_requires_enabled_embedding_model(tmp_path: Path) -> None:
+    """API deployments without the RAG model should return a clear 503."""
+
+    settings = Settings(
+        _env_file=None,
+        storage_dir=tmp_path,
+        embedding_enabled=False,
+    )
+    application = create_app(settings=settings)
+    session = AsyncMock(spec=AsyncSession)
+
+    async def override_session() -> AsyncIterator[AsyncSession]:
+        yield session
+
+    application.dependency_overrides[get_db_session] = override_session
+    with TestClient(application) as client:
+        response = client.post("/api/v1/documents/1/index")
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "EMBEDDING_MODEL_DISABLED"

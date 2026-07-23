@@ -8,7 +8,9 @@ and a Vue 3 frontend.
 The repository is built in small, verifiable stages. The current stage can
 validate and store an uploaded image, run the trained IP102 YOLO model on GPU,
 draw an annotated result, and persist the task and bounding boxes in MySQL.
-RAG, LLM integration, and the frontend remain in progress.
+It can also upload, parse, chunk, locally embed, and index provenance-rich
+knowledge sources in MySQL and Qdrant. Retrieval, LLM integration, and the
+frontend remain in progress.
 
 ## Requirements
 
@@ -247,6 +249,35 @@ byte-identical uploads return HTTP 409. The committed
 `knowledge_sources/` directory contains curated, source-linked inputs used by
 the reproducible demo; an uploaded document is not searchable until the later
 indexing step succeeds.
+
+Install the optional local RAG dependencies and enable the embedding model:
+
+```powershell
+python -m pip install -e ".\backend[dev,rag]"
+```
+
+```dotenv
+AGRIGUARD_EMBEDDING_ENABLED=true
+AGRIGUARD_EMBEDDING_DEVICE=cpu
+```
+
+Restart FastAPI after changing `.env`, then call
+`POST /api/v1/documents/{document_id}/index` in Swagger. Indexing performs these
+steps in order:
+
+1. mark the document as `processing`;
+2. parse it into titled sections and deterministic chunks;
+3. generate normalized 512-dimensional vectors locally with
+   `BAAI/bge-small-zh-v1.5`;
+4. upsert entity-filterable vector points into Qdrant;
+5. save the exact chunk text and citation locator in MySQL;
+6. mark the document `indexed` and its linked entity knowledge `draft`.
+
+The embedding model runs on CPU by default so it does not compete with YOLO
+for GPU memory. `draft` means that indexing succeeded but a person has not yet
+approved the knowledge for diagnosis. Calling the endpoint while embedding is
+disabled returns HTTP 503; indexing the same already-indexed document returns
+HTTP 409 rather than silently replacing reviewed data.
 
 Open a MySQL command session as the application user:
 

@@ -3,15 +3,31 @@
 from datetime import date
 from typing import Annotated, Literal, cast
 
-from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    Path,
+    Request,
+    UploadFile,
+    status,
+)
 from pydantic import HttpUrl
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
 from app.api.deps import get_db_session
 from app.core.config import Settings
-from app.schemas import KnowledgeDocumentResponse
-from app.services import DocumentStorage, KnowledgeDocumentService
+from app.core.exceptions import AppError
+from app.rag.embeddings import TextEmbedder
+from app.rag.vector_database import VectorDatabaseGateway
+from app.schemas import KnowledgeDocumentIndexResponse, KnowledgeDocumentResponse
+from app.services import (
+    DocumentIndexService,
+    DocumentStorage,
+    KnowledgeDocumentService,
+)
 
 router = APIRouter(prefix="/documents", tags=["knowledge documents"])
 
@@ -68,4 +84,44 @@ async def upload_document(
         ),
         entity_ids=sorted(set(entity_ids)),
         created_at=document.created_at,
+    )
+
+
+@router.post(
+    "/{document_id}/index",
+    response_model=KnowledgeDocumentIndexResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Parse, chunk, embed, and index one knowledge document",
+)
+async def index_document(
+    request: Request,
+    document_id: Annotated[int, Path(ge=1)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> KnowledgeDocumentIndexResponse:
+    """Run the synchronous MVP indexing pipeline for one source."""
+
+    settings = cast(Settings, request.app.state.settings)
+    embedder = cast(TextEmbedder | None, request.app.state.embedder)
+    if embedder is None:
+        raise AppError(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="EMBEDDING_MODEL_DISABLED",
+            message="The embedding model is not enabled on this API instance.",
+        )
+    vector_database = cast(
+        VectorDatabaseGateway,
+        request.app.state.vector_database,
+    )
+    result = await DocumentIndexService(
+        session=session,
+        settings=settings,
+        embedder=embedder,
+        vector_database=vector_database,
+    ).index(document_id)
+    return KnowledgeDocumentIndexResponse(
+        document_id=result.document_id,
+        status="indexed",
+        entity_ids=list(result.entity_ids),
+        chunk_count=result.chunk_count,
+        point_count=result.point_count,
     )

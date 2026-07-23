@@ -17,9 +17,11 @@ from app.core.logging import configure_logging
 from app.core.request_logging import log_request
 from app.db.session import Database, DatabaseGateway
 from app.ml.predictors.types import ImagePredictor
+from app.rag.embeddings import SentenceTransformerEmbedder, TextEmbedder
 from app.rag.vector_database import QdrantVectorDatabase, VectorDatabaseGateway
 
 PredictorFactory = Callable[[Settings], ImagePredictor]
+EmbedderFactory = Callable[[Settings], TextEmbedder]
 
 
 def load_yolo_predictor(settings: Settings) -> ImagePredictor:
@@ -42,11 +44,18 @@ def load_yolo_predictor(settings: Settings) -> ImagePredictor:
     )
 
 
+def load_text_embedder(settings: Settings) -> TextEmbedder:
+    """Load the optional local embedding model only for RAG-enabled deployments."""
+
+    return SentenceTransformerEmbedder(settings)
+
+
 def create_app(
     settings: Settings | None = None,
     database: DatabaseGateway | None = None,
     vector_database: VectorDatabaseGateway | None = None,
     predictor_factory: PredictorFactory | None = None,
+    embedder_factory: EmbedderFactory | None = None,
 ) -> FastAPI:
     """Create and configure the FastAPI application."""
 
@@ -67,6 +76,12 @@ def create_app(
             application.state.predictor = (
                 (predictor_factory or load_yolo_predictor)(app_settings)
                 if app_settings.yolo_enabled
+                else None
+            )
+        if not hasattr(application.state, "embedder"):
+            application.state.embedder = (
+                (embedder_factory or load_text_embedder)(app_settings)
+                if app_settings.embedding_enabled
                 else None
             )
         yield

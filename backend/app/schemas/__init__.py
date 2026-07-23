@@ -9,7 +9,10 @@ from app.schemas.detection_task import (
     DetectionTaskResponse,
     StoredDetectionResponse,
 )
-from app.schemas.knowledge_document import KnowledgeDocumentResponse
+from app.schemas.knowledge_document import (
+    KnowledgeDocumentIndexResponse,
+    KnowledgeDocumentResponse,
+)
 
 __all__ = [
     "BoundingBoxResponse",
@@ -20,4 +23,5 @@ __all__ = [
     "DetectionTaskResponse",
     "StoredDetectionResponse",
     "KnowledgeDocumentResponse",
+    "KnowledgeDocumentIndexResponse",
 ]

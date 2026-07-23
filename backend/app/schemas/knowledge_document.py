@@ -20,3 +20,13 @@ class KnowledgeDocumentResponse(BaseModel):
     status: Literal["uploaded", "processing", "indexed", "failed"]
     entity_ids: list[int]
     created_at: datetime
+
+
+class KnowledgeDocumentIndexResponse(BaseModel):
+    """Result returned after a document is searchable in Qdrant."""
+
+    document_id: int
+    status: Literal["indexed"]
+    entity_ids: list[int]
+    chunk_count: int
+    point_count: int

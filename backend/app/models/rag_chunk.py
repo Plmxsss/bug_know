@@ -57,6 +57,7 @@ class RagChunk(Base):
     )
     chunk_index: Mapped[int] = mapped_column(Integer)
     heading: Mapped[str | None] = mapped_column(String(500))
+    locator: Mapped[str] = mapped_column(String(500))
     content: Mapped[str] = mapped_column(Text)
     content_sha256: Mapped[str] = mapped_column(String(64))
     qdrant_point_id: Mapped[str] = mapped_column(String(36), unique=True)
