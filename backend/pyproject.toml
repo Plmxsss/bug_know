@@ -31,6 +31,10 @@ ml = [
 rag = [
     "sentence-transformers>=5.6,<6.0",
 ]
+agent = [
+    "langchain>=1.1,<2.0",
+    "langchain-openai>=1.1,<2.0",
+]
 dev = [
     "mypy>=1.14,<2.0",
     "pytest>=8.3,<9.0",

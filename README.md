@@ -419,6 +419,26 @@ generation deliberately keeps responsibilities separate:
 This fixed, evidence-gated workflow is used for diagnosis instead of giving an
 autonomous agent unrestricted access to detection or database state.
 
+## Bounded LangChain agent
+
+Install the optional agent dependencies:
+
+```powershell
+python -m pip install -e ".\backend[agent]"
+```
+
+The project uses LangChain's `create_agent` only for follow-up retrieval-query
+planning. The Agent receives one read-only tool whose entity scope will be
+fixed by the current detection task. Server code records the tool queries and
+discards the Agent's final prose; a separate structured generation step will
+produce the user-visible answer and validate its citations.
+
+This boundary is intentional. A real Qwen3-4B experiment correctly called the
+retrieval tool but added an unsupported claim in its later free-form answer.
+The project therefore demonstrates Agent tool use without trusting autonomous
+output for agricultural advice. Unit tests also reject an Agent run that tries
+to answer without calling the retrieval tool.
+
 ## Generate and read a diagnosis report
 
 Before diagnosis, the detection task must be `completed`, every detected class
