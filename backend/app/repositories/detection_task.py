@@ -19,6 +19,17 @@ class DetectionTaskRepository:
         result = await self._session.execute(statement)
         return result.scalar_one_or_none()
 
+    async def get_by_id_for_update(self, task_id: int) -> DetectionTask | None:
+        """Return and lock one task until the surrounding transaction ends."""
+
+        statement = (
+            select(DetectionTask)
+            .where(DetectionTask.id == task_id)
+            .with_for_update()
+        )
+        result = await self._session.execute(statement)
+        return result.scalar_one_or_none()
+
     async def list_page(
         self,
         *,
@@ -57,6 +68,13 @@ class DetectionTaskRepository:
             completed_at=None,
         )
         self._session.add(task)
+        await self._session.flush()
+        await self._session.refresh(task)
+        return task
+
+    async def save(self, task: DetectionTask) -> DetectionTask:
+        """Flush changes made to an already loaded task."""
+
         await self._session.flush()
         await self._session.refresh(task)
         return task

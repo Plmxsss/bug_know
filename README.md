@@ -152,6 +152,21 @@ python scripts/create_detection_task.py `
 The referenced model version must already exist. MySQL rejects a task whose
 `model_version_id` does not match a row in `model_versions`.
 
+Development-only status transition examples:
+
+```powershell
+# Replace 123 with the ID printed by create_detection_task.py.
+python scripts/update_detection_task_status.py --task-id 123 start
+
+python scripts/update_detection_task_status.py `
+  --task-id 123 `
+  fail `
+  --error-message "Inference worker stopped."
+```
+
+The service permits `pending -> processing -> completed` and failure from
+`pending` or `processing`. Invalid transitions return a business error.
+
 Open a MySQL command session as the application user:
 
 ```powershell
