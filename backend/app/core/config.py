@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     yolo_class_count: int = 102
     yolo_image_size: int = 640
     yolo_device: str = "0"
+    max_upload_bytes: int = 10 * 1024 * 1024
+    max_image_pixels: int = 25_000_000
+    storage_dir: Path = Path("storage")
 
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",

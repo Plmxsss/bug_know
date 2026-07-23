@@ -6,12 +6,10 @@ from app.ml.predictors.types import (
     ImagePredictor,
     PredictionResult,
 )
-from app.ml.predictors.yolo import YoloPredictor
 
 __all__ = [
     "BoundingBox",
     "Detection",
     "ImagePredictor",
     "PredictionResult",
-    "YoloPredictor",
 ]

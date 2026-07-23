@@ -4,9 +4,6 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any, cast
 
-import torch
-from ultralytics import YOLO  # type: ignore[attr-defined]
-
 from app.ml.predictors.types import BoundingBox, Detection, PredictionResult
 
 
@@ -77,6 +74,9 @@ class YoloPredictor:
         image_size: int = 640,
         device: str | None = None,
     ) -> None:
+        import torch
+        from ultralytics import YOLO  # type: ignore[attr-defined]
+
         if not weights_path.is_file():
             raise FileNotFoundError(f"YOLO weights do not exist: {weights_path}")
 
