@@ -1,10 +1,21 @@
 """Create and manage the asynchronous Qdrant client."""
 
-from typing import Protocol
+from dataclasses import dataclass
+from typing import Any, Protocol, cast
 
 from qdrant_client import AsyncQdrantClient
+from qdrant_client.models import Distance, PointStruct, VectorParams
 
 from app.core.config import Settings
+
+
+@dataclass(frozen=True, slots=True)
+class VectorPoint:
+    """Framework-independent point prepared by the indexing service."""
+
+    point_id: str
+    vector: list[float]
+    payload: dict[str, object]
 
 
 class VectorDatabaseGateway(Protocol):
@@ -15,6 +26,22 @@ class VectorDatabaseGateway(Protocol):
 
     async def close(self) -> None:
         """Release network resources owned by the client."""
+
+    async def ensure_collection(
+        self,
+        *,
+        collection_name: str,
+        dimension: int,
+    ) -> None:
+        """Create or validate one cosine-distance collection."""
+
+    async def upsert_points(
+        self,
+        *,
+        collection_name: str,
+        points: list[VectorPoint],
+    ) -> None:
+        """Insert or replace deterministic vector points."""
 
 
 class QdrantVectorDatabase:
@@ -32,3 +59,54 @@ class QdrantVectorDatabase:
         """Close the underlying HTTP and optional gRPC clients."""
 
         await self.client.close()
+
+    async def ensure_collection(
+        self,
+        *,
+        collection_name: str,
+        dimension: int,
+    ) -> None:
+        """Create a cosine collection or reject an incompatible existing one."""
+
+        if not await self.client.collection_exists(collection_name):
+            await self.client.create_collection(
+                collection_name=collection_name,
+                vectors_config=VectorParams(
+                    size=dimension,
+                    distance=Distance.COSINE,
+                ),
+            )
+            return
+
+        info = await self.client.get_collection(collection_name)
+        vectors_config = cast(Any, info.config.params.vectors)
+        actual_size = getattr(vectors_config, "size", None)
+        actual_distance = getattr(vectors_config, "distance", None)
+        if actual_size != dimension or actual_distance != Distance.COSINE:
+            raise ValueError(
+                f"Qdrant collection {collection_name!r} has incompatible "
+                f"vector settings: size={actual_size}, distance={actual_distance}."
+            )
+
+    async def upsert_points(
+        self,
+        *,
+        collection_name: str,
+        points: list[VectorPoint],
+    ) -> None:
+        """Upsert points and wait until they are available for retrieval."""
+
+        if not points:
+            return
+        await self.client.upsert(
+            collection_name=collection_name,
+            points=[
+                PointStruct(
+                    id=point.point_id,
+                    vector=point.vector,
+                    payload=point.payload,
+                )
+                for point in points
+            ],
+            wait=True,
+        )
