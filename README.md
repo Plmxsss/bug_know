@@ -373,6 +373,20 @@ URL, API key, and model name. Use `json_object` or `prompt_only` only when that
 provider does not support JSON Schema. API keys remain in `.env` and are never
 returned to the frontend or written to logs.
 
+The verified local development model is
+`qwen3:4b-instruct-2507-q4_K_M` (2.5 GB). A real structured smoke request
+successfully passed the project provider and Pydantic validation. Diagnosis
+generation deliberately keeps responsibilities separate:
+
+- MySQL detection rows determine entity ID, confidence, and count.
+- Qdrant plus MySQL determine which evidence chunks and citations are allowed.
+- Qwen synthesizes only the explanatory fields.
+- The backend rejects citations outside the current retrieval and rejects
+  universal area-based pesticide dosage patterns.
+
+This fixed, evidence-gated workflow is used for diagnosis instead of giving an
+autonomous agent unrestricted access to detection or database state.
+
 Open a MySQL command session as the application user:
 
 ```powershell

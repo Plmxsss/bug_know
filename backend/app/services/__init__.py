@@ -18,6 +18,11 @@ from app.services.pest_mapping_review import (
     PestMappingReviewService,
 )
 from app.services.pest_mapping_seed import PestMappingSeedService, SeedSummary
+from app.services.report_generation import (
+    DetectedEntityContext,
+    GeneratedReport,
+    ReportGenerator,
+)
 
 __all__ = [
     "AnnotatedImage",
@@ -38,6 +43,9 @@ __all__ = [
     "MappingReviewResult",
     "PestMappingReviewService",
     "PestMappingSeedService",
+    "DetectedEntityContext",
+    "GeneratedReport",
+    "ReportGenerator",
     "SeedSummary",
     "StoredImage",
     "StoredDocument",

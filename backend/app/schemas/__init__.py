@@ -9,6 +9,12 @@ from app.schemas.detection_task import (
     DetectionTaskResponse,
     StoredDetectionResponse,
 )
+from app.schemas.diagnosis import (
+    DiagnosedEntity,
+    DiagnosisReference,
+    DiagnosisReportContent,
+    EntityKnowledgeSynthesis,
+)
 from app.schemas.knowledge_document import (
     KnowledgeDocumentIndexResponse,
     KnowledgeDocumentResponse,
@@ -27,6 +33,10 @@ __all__ = [
     "DetectionTaskListResponse",
     "DetectionTaskResponse",
     "StoredDetectionResponse",
+    "DiagnosedEntity",
+    "DiagnosisReference",
+    "DiagnosisReportContent",
+    "EntityKnowledgeSynthesis",
     "KnowledgeDocumentResponse",
     "KnowledgeDocumentIndexResponse",
     "KnowledgeSearchHitResponse",
