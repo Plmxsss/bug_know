@@ -42,6 +42,12 @@ class Settings(BaseSettings):
     qdrant_collection: str = "agriguard_knowledge"
     rag_chunk_size: int = Field(default=800, ge=200, le=4000)
     rag_chunk_overlap: int = Field(default=120, ge=0, le=1000)
+    embedding_enabled: bool = False
+    embedding_model: str = "BAAI/bge-small-zh-v1.5"
+    embedding_device: str = "cpu"
+    embedding_dimension: int = Field(default=512, ge=1)
+    embedding_batch_size: int = Field(default=16, ge=1, le=256)
+    embedding_cache_dir: Path = Path("models/embeddings")
 
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",

@@ -38,3 +38,4 @@ data/
 models/**/*.pt
 models/**/*.onnx
 models/**/*.engine
+models/embeddings/
