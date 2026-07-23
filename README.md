@@ -12,9 +12,9 @@ It can also upload, parse, chunk, locally embed, and index provenance-rich
 knowledge sources in MySQL and Qdrant. Retrieval, LLM integration, and the
 evidence-bound diagnosis flow are now connected: reviewed retrieval results
 can be synthesized by local Qwen or a configured API model and persisted as a
-structured report. The first Vue unit now renders the project shell and reads
-live FastAPI, MySQL, and Qdrant readiness; upload and report screens remain in
-progress.
+structured report. The Vue application now reads live service readiness and
+supports image selection, preview, multipart upload, and detection result
+display. Diagnosis report and history screens remain in progress.
 
 ## Requirements
 
@@ -126,6 +126,7 @@ reachable.
 Verify TypeScript and create the production bundle:
 
 ```powershell
+npm test
 npm run build
 ```
 

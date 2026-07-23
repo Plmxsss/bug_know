@@ -20,15 +20,20 @@ Build and type-check the production bundle:
 
 ```powershell
 npm run build
+npm test
 ```
 
 The current learning unit contains:
 
 - `src/main.ts`: creates and mounts the Vue application.
-- `src/App.vue`: the root page component.
+- `src/App.vue`: shared page shell and navigation.
+- `src/router/index.ts`: maps `/` and `/detect` to page components.
 - `src/components/ServiceReadiness.vue`: reactive service-status component.
-- `src/api/health.ts`: typed FastAPI health request.
+- `src/api/`: typed health and multipart detection requests.
+- `src/stores/detection.ts`: Pinia state for the active detection.
+- `src/views/DetectionView.vue`: image selection, preview, upload, and results.
 - `vite.config.ts`: Vue plugin and local reverse-proxy configuration.
 
-The upload and report workflow will be added in later, independently verifiable
-units.
+Vitest replaces the real detection API in store tests, so routine frontend
+tests do not load YOLO or require a GPU. Diagnosis reports and history will be
+added in later, independently verifiable units.
