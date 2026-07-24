@@ -133,6 +133,69 @@ npm test
 npm run build
 ```
 
+## Run the production container stack
+
+The production topology is defined in `infra/compose.yaml`:
+
+```text
+browser -> Nginx/Vue -> FastAPI -> MySQL
+                              -> Qdrant
+                              -> Redis
+                              -> Ollama or a selected cloud API
+```
+
+First copy `.env.example` to the ignored private `.env` and replace every
+`replace-with-...` value. In particular, Compose intentionally refuses to
+start without MySQL root/application passwords and a Redis password.
+
+The backend Dockerfile provides three cumulative targets:
+
+- `api`: FastAPI, database, Qdrant/Redis clients, and the bounded LangChain
+  Agent. It can query an existing index but does not load local Embedding or
+  YOLO packages.
+- `rag`: `api` plus the local sentence-transformer Embedding runtime.
+- `full`: `rag` plus Ultralytics YOLO and PyTorch.
+
+Start with the small API target to verify networking and migrations:
+
+```dotenv
+AGRIGUARD_BACKEND_TARGET=api
+AGRIGUARD_YOLO_ENABLED=false
+AGRIGUARD_EMBEDDING_ENABLED=false
+```
+
+```powershell
+docker compose --env-file .env -f infra/compose.yaml up -d --build
+docker compose --env-file .env -f infra/compose.yaml ps
+```
+
+Open the Vue application at <http://127.0.0.1:8080>, Swagger through Nginx at
+<http://127.0.0.1:8080/docs>, and the readiness endpoint at
+<http://127.0.0.1:8080/api/v1/health/ready>.
+
+For a complete local inference image, change the private configuration and
+rebuild:
+
+```dotenv
+AGRIGUARD_BACKEND_TARGET=full
+AGRIGUARD_YOLO_ENABLED=true
+AGRIGUARD_EMBEDDING_ENABLED=true
+```
+
+The standard base is `python:3.11-slim`. If Docker Hub is temporarily
+unreachable, `AGRIGUARD_PYTHON_BASE_IMAGE` can select a compatible Python 3.11
+Debian slim image without editing the Dockerfile. Do not use an untrusted
+registry mirror.
+
+Named volumes preserve MySQL, Qdrant, Redis, uploaded files, and downloaded
+Embedding models. Stop the stack without deleting those volumes:
+
+```powershell
+docker compose --env-file .env -f infra/compose.yaml down
+```
+
+Never add `--volumes` unless permanent local data removal is intentional.
+
 ## Run the local MySQL database
 
 Copy the example configuration once, then replace its example passwords:

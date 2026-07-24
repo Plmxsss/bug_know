@@ -1,6 +1,82 @@
 name: agriguard
 
 services:
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+      target: ${AGRIGUARD_BACKEND_TARGET:-api}
+      args:
+        PYTHON_BASE_IMAGE: ${AGRIGUARD_PYTHON_BASE_IMAGE:-python:3.11-slim}
+    restart: unless-stopped
+    environment:
+      AGRIGUARD_ENVIRONMENT: production
+      AGRIGUARD_MYSQL_HOST: mysql
+      AGRIGUARD_MYSQL_PORT: 3306
+      AGRIGUARD_MYSQL_DATABASE: ${AGRIGUARD_MYSQL_DATABASE:?Set AGRIGUARD_MYSQL_DATABASE in .env}
+      AGRIGUARD_MYSQL_USER: ${AGRIGUARD_MYSQL_USER:?Set AGRIGUARD_MYSQL_USER in .env}
+      AGRIGUARD_MYSQL_PASSWORD: ${AGRIGUARD_MYSQL_PASSWORD:?Set AGRIGUARD_MYSQL_PASSWORD in .env}
+      AGRIGUARD_QDRANT_URL: http://qdrant:6333
+      AGRIGUARD_REDIS_HOST: redis
+      AGRIGUARD_REDIS_PORT: 6379
+      AGRIGUARD_REDIS_PASSWORD: ${AGRIGUARD_REDIS_PASSWORD:?Set AGRIGUARD_REDIS_PASSWORD in .env}
+      AGRIGUARD_STORAGE_DIR: /app/storage
+      AGRIGUARD_YOLO_ENABLED: ${AGRIGUARD_YOLO_ENABLED:-false}
+      AGRIGUARD_YOLO_DEVICE: ${AGRIGUARD_YOLO_DEVICE:-cpu}
+      AGRIGUARD_YOLO_WEIGHTS_PATH: /app/data/runs/yolo26n_bug_know-5/weights/best.pt
+      AGRIGUARD_EMBEDDING_ENABLED: ${AGRIGUARD_EMBEDDING_ENABLED:-false}
+      AGRIGUARD_EMBEDDING_MODEL: ${AGRIGUARD_EMBEDDING_MODEL:-BAAI/bge-small-zh-v1.5}
+      AGRIGUARD_EMBEDDING_DEVICE: cpu
+      AGRIGUARD_EMBEDDING_CACHE_DIR: /app/models/embeddings
+      AGRIGUARD_LLM_ENABLED: ${AGRIGUARD_LLM_ENABLED:-false}
+      AGRIGUARD_LLM_PROVIDER: ${AGRIGUARD_LLM_PROVIDER:-ollama}
+      AGRIGUARD_LLM_BASE_URL: ${AGRIGUARD_CONTAINER_LLM_BASE_URL:-http://host.docker.internal:11434/v1}
+      AGRIGUARD_LLM_API_KEY: ${AGRIGUARD_LLM_API_KEY:-}
+      AGRIGUARD_LLM_MODEL: ${AGRIGUARD_LLM_MODEL:-qwen3:4b-instruct-2507-q4_K_M}
+      AGRIGUARD_AGENT_ENABLED: ${AGRIGUARD_AGENT_ENABLED:-false}
+      AGRIGUARD_AGENT_RATE_LIMIT_REQUESTS: ${AGRIGUARD_AGENT_RATE_LIMIT_REQUESTS:-5}
+      AGRIGUARD_AGENT_RATE_LIMIT_WINDOW_SECONDS: ${AGRIGUARD_AGENT_RATE_LIMIT_WINDOW_SECONDS:-60}
+    command:
+      - sh
+      - -c
+      - alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "${AGRIGUARD_API_PORT:-8000}:8000"
+    volumes:
+      - app_storage:/app/storage
+      - embedding_models:/app/models/embeddings
+      - ../data:/app/data:ro
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    depends_on:
+      mysql:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=2)"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  web:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${AGRIGUARD_WEB_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
   mysql:
     image: mysql:8.4
     restart: unless-stopped
@@ -65,6 +141,8 @@ services:
       start_period: 10s
 
 volumes:
+  app_storage:
+  embedding_models:
   mysql_data:
   qdrant_data:
   redis_data:
