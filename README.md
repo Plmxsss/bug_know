@@ -19,6 +19,13 @@ diagnosis with source links. A paginated history page reloads persisted MySQL
 tasks after a browser refresh. Each task detail reads stored boxes and an
 existing report without rerunning YOLO, retrieval, or Qwen.
 
+Project handoff material:
+
+- [System architecture](docs/ARCHITECTURE.md)
+- [Repeatable demonstration guide](docs/DEMO.md)
+- [Interview review guide](docs/INTERVIEW_GUIDE.md)
+- [IP102 model card](model_artifacts/ip102-yolo26n/MODEL_CARD.md)
+
 ## Requirements
 
 - Python 3.11 or newer
@@ -172,6 +179,17 @@ docker compose --env-file .env -f infra/compose.yaml ps
 Open the Vue application at <http://127.0.0.1:8080>, Swagger through Nginx at
 <http://127.0.0.1:8080/docs>, and the readiness endpoint at
 <http://127.0.0.1:8080/api/v1/health/ready>.
+
+Run the external smoke test from `backend`:
+
+```powershell
+python scripts/smoke_deployment.py
+```
+
+It sends requests only through the public Nginx port and verifies the Vue HTML,
+FastAPI process health, MySQL/Qdrant/Redis readiness, and required OpenAPI
+paths. A failed check exits with status code 1, so the same command can later
+be used by CI or a deployment script.
 
 For a complete local inference image, change the private configuration and
 rebuild:
